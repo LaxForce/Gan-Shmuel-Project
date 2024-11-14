@@ -12,7 +12,7 @@ db_config = {
     'host': os.getenv("DB_HOST", "mysql-db"),
     'user': os.getenv("DB_USER", "weight_team"),
     'password': os.getenv("DB_PASSWORD", "12345"),
-    'database': os.getenv("DB_NAME", "truck_weights")
+    'database': os.getenv("DB_NAME", "weight")
 }
 
 app = Flask(__name__)

@@ -9,7 +9,7 @@ services:
       - DB_HOST=mysql-db
       - DB_USER=weight_team
       - DB_PASSWORD=12345
-      - DB_NAME=truck_weights
+      - DB_NAME=weight
     ports:
       - "5000:5000"
     depends_on:
@@ -19,11 +19,11 @@ services:
 
   # MySQL database service
   db:
-    image: mysql:5.7
+    image: mysql:latest
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: truck_weights
+      MYSQL_DATABASE: weight
       MYSQL_USER: weight_team
       MYSQL_PASSWORD: 12345
     ports:
@@ -33,8 +33,9 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
+    command: --skip-networking=false
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -46,4 +47,3 @@ networks:
 
 volumes:
   mysql-data:
-
