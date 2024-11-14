@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS `containers_registered` (
 --
 
 CREATE TABLE IF NOT EXISTS `transactions` (
+  `SessionId` int(12) NOT NULL AUTO_INCREMENT, 
   `id` int(12) NOT NULL AUTO_INCREMENT,
   `datetime` datetime DEFAULT NULL,
   `direction` varchar(10) DEFAULT NULL,
