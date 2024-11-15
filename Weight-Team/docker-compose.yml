@@ -19,7 +19,7 @@ services:
 
   # MySQL database service
   db:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root_password
