@@ -49,6 +49,39 @@ def health_check():
     else:
         return jsonify("Failure"), 500  # If connection fails
     
+@app.route('/unknown', methods=['GET'])
+def get_unknown_weights():
+    # Function that returns a list of container IDs with unknown weight (NULL values) from the containers_registered table
+    try:
+        # Connect to the MySQL database
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        
+        # SQL query to find containers with unknown weight (NULL value)
+        query = """
+        SELECT cr.container_id
+        FROM containers_registered cr
+        WHERE cr.weight IS NULL
+        """
+        
+        # Execute the query
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        # Extract the container_ids from the query result
+        unknown_container_ids = [row['container_id'] for row in rows]
+
+        # Return the list of container IDs with unknown weight as JSON
+        return jsonify(unknown_container_ids)
+
+    except mysql.connector.Error as err:
+        # If there's a database error, return an error message
+        return jsonify({"error": str(err)}), 500
+    finally:
+        # Close the database connection and cursor
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
 # Define valid directions for filtering
 VALID_DIRECTIONS = ['in', 'out', 'none']
