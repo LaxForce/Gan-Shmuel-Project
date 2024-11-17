@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 import os
 
@@ -30,7 +30,7 @@ except Exception as e:
 # Define the base class for ORM models
 Base = automap_base()
 # Reflect the existing database tables
-Base.prepare(engine, reflect=True)
+Base.prepare(autoload_with=engine)
 
 # Access tables dynamically
 Providers = Base.classes.Provider
@@ -38,5 +38,4 @@ Rates = Base.classes.Rates
 Truck = Base.classes.Trucks
 
 # Create a session maker bound to the engine
-Session = sessionmaker(bind=engine)
-session = Session()
+session = Session(engine)

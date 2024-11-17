@@ -18,10 +18,11 @@ CREATE TABLE IF NOT EXISTS `Provider` (
 ) ENGINE=MyISAM  AUTO_INCREMENT=10001 ;
 
 CREATE TABLE IF NOT EXISTS `Rates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `product_id` varchar(50) NOT NULL,
   `rate` int(11) DEFAULT 0,
   `scope` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`product_id`),
+  PRIMARY KEY (`id`),
   FOREIGN KEY (scope) REFERENCES `Provider`(`id`)
 ) ENGINE=MyISAM ;
 
