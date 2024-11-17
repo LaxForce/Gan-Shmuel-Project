@@ -1,7 +1,8 @@
 version: '3'
 services:
   weight:
-    build: .
+    build: 
+      context: ../Weight-Team    # Path to Weight-Team from project root
     container_name: ci_test_weight
     ports:
       - "8081:8081"

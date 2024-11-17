@@ -1,7 +1,8 @@
 version: '3'
 services:
   weight:
-    build: .
+    build:
+      context: ../Weight-Team
     container_name: prod_weight
     ports:
       - "8081:8081"
