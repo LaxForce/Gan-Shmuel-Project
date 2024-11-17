@@ -1,0 +1,13 @@
+version: '3'
+services:
+  weight:
+    build: .
+    container_name: ci_test_weight
+    ports:
+      - "8081:8081"
+    networks:
+      - test_network
+
+networks:
+  test_network:
+    name: ci_test_network

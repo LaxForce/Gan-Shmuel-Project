@@ -1,0 +1,16 @@
+version: '3'
+services:
+  billing:
+    build: .
+    container_name: ci_test_billing
+    ports:
+      - "8082:8082"
+    depends_on:
+      - weight
+    networks:
+      - test_network
+
+networks:
+  test_network:
+    name: ci_test_network
+    external: true

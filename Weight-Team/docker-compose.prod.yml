@@ -1,0 +1,13 @@
+version: '3'
+services:
+  weight:
+    build: .
+    container_name: prod_weight
+    ports:
+      - "8081:8081"
+    networks:
+      - prod_network
+
+networks:
+  prod_network:
+    name: ci_prod_network

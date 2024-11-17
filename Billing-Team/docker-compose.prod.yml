@@ -1,0 +1,16 @@
+version: '3'
+services:
+  billing:
+    build: .
+    container_name: prod_billing
+    ports:
+      - "8082:8082"
+    depends_on:
+      - weight
+    networks:
+      - prod_network
+
+networks:
+  prod_network:
+    name: ci_prod_network
+    external: true
