@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Flask app service
   app:
@@ -34,7 +32,7 @@ services:
       - my_network
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weigtdb.sql
     command: --skip-networking=false
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
