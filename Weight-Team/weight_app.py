@@ -299,6 +299,9 @@ def get_weights():
             t2 = datetime.strptime(t2_str, '%Y%m%d%H%M%S')
         except ValueError:
             return jsonify({"error": "Invalid 'to' date format. Use yyyymmddhhmmss."}), 400
+    
+    if t1 > t2:
+        return jsonify({"error": "Invalid date range. 'from' date must be before 'to' date."}), 400
 
     # Get 'filter' directions - default to 'in,out,none'
     filter_str = request.args.get('filter', default='in,out,none', type=str)
