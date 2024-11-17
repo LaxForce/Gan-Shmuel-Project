@@ -33,6 +33,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weigtdb.sql
+      - ./weight_db/trucks.json:/app/weight_db
     command: --skip-networking=false
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]

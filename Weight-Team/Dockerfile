@@ -15,6 +15,7 @@ RUN pip install -r requirements.txt
 
 # Copy necessary files to the /app container directory
 COPY weight_app.py .env /app/
+COPY weight_db/trucks.json /app/trucks.json
 
 # Set environment variable to specify the Flask app file
 ENV FLASK_APP=weight_app.py
