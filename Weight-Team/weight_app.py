@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 import time
 from datetime import datetime
+import json
+import pandas as pd
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,7 +24,7 @@ app = Flask(__name__)
 def home():
     return "Welcome to the Truck Weighing API!"
 
-# Function to check database connection
+# Helper function to check database connection
 def check_db_connection():
     max_retries = 5  # Maximum number of retries
     retries = 0
@@ -41,14 +43,168 @@ def check_db_connection():
     return False  # If connection fails after multiple attempts
 
 @app.route('/health', methods=['GET'])
+# Function to check database availability
 def health_check():
-    # Check database availability
     db_available = check_db_connection()
     if db_available:
         return jsonify("OK"), 200  # If connection is successful
     else:
         return jsonify("Failure"), 500  # If connection fails
     
+@app.route('/unknown', methods=['GET'])
+# Function that returns a list of container IDs with unknown weight (NULL values) from the containers_registered table
+def get_unknown_weights():
+    try:
+        # Connect to the MySQL database
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        
+        # SQL query to find containers with unknown weight (NULL value)
+        query = """
+        SELECT cr.container_id
+        FROM containers_registered cr
+        WHERE cr.weight IS NULL
+        """
+        
+        # Execute the query
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        # Extract the container_ids from the query result
+        unknown_container_ids = [row['container_id'] for row in rows]
+
+        # Return the list of container IDs with unknown weight as JSON
+        return jsonify(unknown_container_ids)
+
+    except mysql.connector.Error as err:
+        # If there's a database error, return an error message
+        return jsonify({"error": str(err)}), 500
+    finally:
+        # Close the database connection and cursor
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+# Helper function to insert batch data into the database
+def insert_batch_weight(container_data):
+    try:
+        # Connect to the database using the provided db_config
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        inserted_count = 0  # Initialize a counter for the inserted records
+
+        # Loop through each record in container_data and insert it into the database
+        for data in container_data:
+            # Convert weight of 0 to NULL before inserting
+            if data['weight'] == 0:
+                data['weight'] = None
+
+            # Check if the container_id already exists in the database
+            cursor.execute("SELECT COUNT(*) FROM containers_registered WHERE container_id = %s", (data['container_id'],))
+            exists = cursor.fetchone()[0]
+            
+            # If the container_id does not exist, insert it
+            if exists == 0:
+                cursor.execute("""
+                    INSERT INTO containers_registered (container_id, weight, unit)
+                    VALUES (%s, %s, %s)
+                """, (data['container_id'], data['weight'], data['unit']))
+                inserted_count += 1
+            else:
+                # If the container_id exists, skip the insertion
+                print(f"Skipping {data['container_id']} as it already exists.")
+
+        # Commit the transaction to the database
+        conn.commit()
+        
+        # Return the number of records inserted
+        return inserted_count
+    except mysql.connector.Error as err:
+        # If any database error occurs, print and raise the error
+        print(f"Error: {err}")
+        raise
+    finally:
+        # Close the database connection if it's open
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+            
+@app.route('/batch-weight', methods=['POST'])
+# Function to parse CSV or JSON file and insert the data into the database
+def batch_weight():
+    files = request.files.getlist('file')
+    if not files:
+        return jsonify({"error": "No files provided"}), 400
+    
+    message = []
+
+    for file in files:
+        file_extension = file.filename.split('.')[-1].lower()
+        
+        if file_extension == 'csv':
+            try:
+                # Use pandas to read the CSV
+                df = pd.read_csv(file)
+                
+                # Check if the necessary columns are present in the CSV
+                required_columns = ['id', 'weight', 'unit']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                
+                if missing_columns:
+                    raise ValueError(f"Missing columns in CSV file: {', '.join(missing_columns)}")
+                
+                # Clean the data and handle missing or invalid weight
+                df['container_id'] = df['id'].str.strip()
+                df['weight'] = pd.to_numeric(df['weight'], errors='coerce')
+
+                # The unit should be taken from the CSV directly, so we assume the unit is in the file
+                df['unit'] = df['unit'].str.strip()  # Clean any unwanted spaces in 'unit' column
+
+                # Prepare data to insert into the DB
+                container_data = df[['container_id', 'weight', 'unit']].to_dict(orient='records')
+
+                # Insert data into the database
+                inserted_count = insert_batch_weight(container_data)
+                message.append(f"CSV data from {file.filename} processed successfully. {inserted_count} records inserted.")
+            
+            except Exception as e:
+                message.append(f"Error processing CSV {file.filename}: {str(e)}")
+
+        elif file_extension == 'json':
+            try:
+                file_data = json.loads(file.read())
+                container_data = []
+                
+                # Check if the necessary fields are present in each entry in the JSON
+                for entry in file_data:
+                    if not all(key in entry for key in ['id', 'weight', 'unit']):
+                        raise ValueError(f"Missing required fields in JSON entry. Each entry must contain 'id', 'weight', and 'unit'.")
+                    
+                    weight = entry['weight']
+                    try:
+                        weight = float(weight) if weight else None
+                    except ValueError:
+                        weight = None
+                    
+                    unit = entry['unit'].strip() if 'unit' in entry else 'kg'  # Default to 'kg' if no unit specified
+                    container_data.append({
+                        'container_id': entry['id'],
+                        'weight': weight if weight is not None else None,
+                        'unit': unit
+                    })
+
+                # Insert data into the database
+                inserted_count = insert_batch_weight(container_data)
+                message.append(f"JSON data from {file.filename} processed successfully. {inserted_count} records inserted.")
+            
+            except Exception as e:
+                message.append(f"Error processing JSON {file.filename}: {str(e)}")
+
+        else:
+            message.append(f"Unsupported file format in {file.filename}.")
+
+    return jsonify({"message": message}), 200
 
 # Define valid directions for filtering
 VALID_DIRECTIONS = ['in', 'out', 'none']

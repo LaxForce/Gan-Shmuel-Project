@@ -1,8 +1,8 @@
 # Base image
 FROM python:3.10-slim
 
-# Install mysql-client
-RUN apt-get update && apt-get install -y default-mysql-client
+# Install mysql-client and other dependencies
+RUN apt-get update && apt-get install -y default-mysql-client && apt-get clean
 
 # Set app container working directory
 WORKDIR /app
@@ -19,5 +19,5 @@ COPY weight_app.py .env /app/
 # Set environment variable to specify the Flask app file
 ENV FLASK_APP=weight_app.py
 
-# Define the default command to run the application (Flask app) when the container starts
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+# Default command for the container
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
