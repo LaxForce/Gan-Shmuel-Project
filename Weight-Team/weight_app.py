@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-import mysql.connector
+import mysql.connector # type: ignore
 from dotenv import load_dotenv
 import os
 import time
@@ -138,6 +138,61 @@ def get_weights():
         if conn.is_connected():
             cursor.close()
             conn.close()
+
+@app.route('/item/<id>', methods=['GET'])
+def get_item(id):
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    
+    # Check if the id exists in the truck table
+    cursor.execute("SELECT tara FROM trucks WHERE id = %s", (id,))
+    truck = cursor.fetchone()
+    
+    if truck:
+        item_type = 'truck'
+        tara = truck['tara']
+    else:
+        # Check if the id exists in the containers_registered table
+        cursor.execute("SELECT container_id FROM containers_registered WHERE container_id = %s", (id,))
+        container = cursor.fetchone()
+        if container:
+            item_type = 'container'
+            tara = "na"  # Containers do not have a tara value
+        else:
+            # Item not found in either table
+            return jsonify({"error": "Item not found"}), 404
+
+    # Parse `from` and `to` query parameters
+    now = datetime.now()
+    t1_str = request.args.get('from')
+    t2_str = request.args.get('to')
+
+    # Default t1 is the first day of the current month at 00:00:00
+    t1 = datetime.strptime(t1_str, '%Y%m%d%H%M%S') if t1_str else now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # Default t2 is the current time
+    t2 = datetime.strptime(t2_str, '%Y%m%d%H%M%S') if t2_str else now
+
+    # Query sessions from the transactions table, ensuring correct date-time filtering
+    cursor.execute("""
+        SELECT SessionId FROM transactions
+        WHERE (truck = %s OR containers LIKE %s) AND datetime BETWEEN %s AND %s
+    """, (id, f"%{id}%", t1, t2))
+    sessions = cursor.fetchall()
+
+    # Extract session IDs from the result set
+    session_ids = [session['SessionId'] for session in sessions if session['SessionId'] is not None]
+
+    # Close the connection
+    cursor.close()
+    conn.close()
+
+    # Return the JSON response
+    return jsonify({
+        "id": id,
+        "tara": tara,
+        "sessions": session_ids
+    })
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)  # Listen on all interfaces
