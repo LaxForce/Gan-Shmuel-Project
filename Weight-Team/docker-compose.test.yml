@@ -12,3 +12,4 @@ services:
 networks:
   test_network:
     name: ci_test_network
+    external: true    # Add this line - tells Docker the network already exists

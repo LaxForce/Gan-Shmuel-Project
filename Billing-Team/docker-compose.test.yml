@@ -2,14 +2,13 @@ version: '3'
 services:
   billing:
     build:
-      context: ../Billing-Team   # Path to Billing-Team from project root
+      context: ../Billing-Team
     container_name: ci_test_billing
     ports:
       - "8082:8082"
-    depends_on:
-      - weight
     networks:
       - test_network
+    # Remove depends_on since weight is in a different compose file
 
 networks:
   test_network:

@@ -6,10 +6,9 @@ services:
     container_name: prod_billing
     ports:
       - "8082:8082"
-    depends_on:
-      - weight
     networks:
       - prod_network
+    
 
 networks:
   prod_network:
