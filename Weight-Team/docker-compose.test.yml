@@ -8,6 +8,9 @@ services:
       - "8081:8081"
     networks:
       - test_network
+    environment:
+      - SERVICE_HOST=ci_test_weight
+      - SERVICE_PORT=8081
 
 networks:
   test_network:
