@@ -1,4 +1,4 @@
-from sql.billing_sql import session, Truck, Provider
+from sql.billing_sql import session, Truck, Providers
 
 def update_truck(truck_id, data):
     # Validate the input data
@@ -7,7 +7,7 @@ def update_truck(truck_id, data):
         return {"error": "Provider ID is required"}, 400
 
     # Validate that the provider exists
-    provider = session.query(Provider).get(provider_id)
+    provider = session.query(Providers).get(provider_id)
     if not provider:
         return {"error": f"Provider with ID {provider_id} does not exist"}, 404
 
