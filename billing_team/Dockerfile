@@ -17,5 +17,5 @@ COPY ./functions ./functions
 COPY routes.py .
 COPY app.py .
 
-#CMD ["python", "app.py"]
-CMD ["bash"]
+CMD ["python", "app.py"]
+#CMD ["bash"]
