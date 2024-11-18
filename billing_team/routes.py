@@ -5,11 +5,8 @@ from flask import Blueprint, request, jsonify, make_response
 from functions.create_provider import create_provider
 from functions.get_rates import get_rates_db
 from functions.health_check import check_health
-<<<<<<< HEAD:Billing-Team/routes.py
 from functions.update_provider_name import update_provider_name  # Import your logic function
-=======
 from functions.post_rates import getting_execl_data
->>>>>>> origin/feat/billing:billing_team/routes.py
 
 
 # Define a Blueprint for provider-related routes
@@ -37,7 +34,6 @@ def health():
 
 post_rates_bp = Blueprint('post_rates', __name__)
 
-<<<<<<< HEAD:Billing-Team/routes.py
 @provider_bp.route('/provider/<int:id>', methods=['PUT'])
 def update_provider(id):
     provider_data = request.get_json()
@@ -46,7 +42,6 @@ def update_provider(id):
 
     # Call the update_provider_name function
     return update_provider_name(id, provider_data["name"])
-=======
 @post_rates_bp.route('/rates', methods=['POST'])
 def post_rates():
     response = getting_execl_data(request.args.get('filename'))
@@ -66,4 +61,3 @@ def setup_routes(app):
     app.register_blueprint(health_bp)
     app.register_blueprint(post_rates_bp)
     app.register_blueprint(get_rates_bp)
->>>>>>> origin/feat/billing:billing_team/routes.py
