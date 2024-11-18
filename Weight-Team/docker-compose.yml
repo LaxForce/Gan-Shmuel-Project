@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Flask app service
   app:
@@ -16,10 +14,12 @@ services:
       - db
     networks:
       - my_network
+    volumes:
+      - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
 
   # MySQL database service
   db:
-    image: mysql:8.0
+    image: mysql:9.1.0
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root_password
@@ -32,7 +32,8 @@ services:
       - my_network
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weigtdb.sql
+      - ./weight_db/trucks.json:/app/weight_db
     command: --skip-networking=false
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
