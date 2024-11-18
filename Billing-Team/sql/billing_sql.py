@@ -1,4 +1,7 @@
-from orm import Table, get_table
+from sqlalchemy import create_engine
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import sessionmaker
+
 import os
 
 db_config = {
@@ -9,22 +12,31 @@ db_config = {
     'database': os.environ.get("MYSQL_DATABASE", "billdb"),
 }
 
-def db_connection():
-    Table.connect(config_dict=db_config)
+# Build the connection string
+DATABASE_URL = (
+    f"mysql+pymysql://{db_config['user']}:{db_config['password']}@"
+    f"{db_config['host']}:{db_config['port']}/{db_config['database']}"
+)
 
-# Connect to the database and create tables if needed
-def providers():
-    db_connection()
-    Providers = get_table('Provider')
-    return Providers
+# Create the SQLAlchemy engine
+engine = create_engine(DATABASE_URL)
 
-def rates():
-    db_connection()
-    Rates = get_table('rates')
-    return Rates
+try:
+    with engine.connect() as connection:
+        print("Connected to the database successfully!")
+except Exception as e:
+    print(f"Failed to connect to the database: {e}")
 
-def trucks():
-    db_connection()
-    Trucks = get_table('trucks')
-    return Trucks
+# Define the base class for ORM models
+Base = automap_base()
+# Reflect the existing database tables
+Base.prepare(engine, reflect=True)
 
+# Access tables dynamically
+Providers = Base.classes.Provider
+Rates = Base.classes.Rates
+Truck = Base.classes.Trucks
+
+# Create a session maker bound to the engine
+Session = sessionmaker(bind=engine)
+session = Session()
