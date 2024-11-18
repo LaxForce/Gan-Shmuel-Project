@@ -5,7 +5,6 @@ from flask import jsonify
 def update_provider_name(id, new_name):
     Session = sessionmaker(bind=engine)
     session = Session()
-    
     try:
         # Query for the provider by ID
         provider = session.query(Providers).filter_by(id=id).first()

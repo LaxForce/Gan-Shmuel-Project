@@ -5,7 +5,7 @@ from flask import send_file, make_response, jsonify
 from sql.billing_sql import Rates, session
 from datetime import datetime
 
-SAVE_DIR = "/Users/idancohen/Documents/develeap/bootcamp/Gan-Shmuel-Project/billing_team/moc"
+SAVE_DIR = "/app/out"
 
 #getting the rates from the DB
 def get_rates_db():

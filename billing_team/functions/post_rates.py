@@ -7,7 +7,7 @@ execl_data = []
 
 #get the data from the execl file and proces it to object for storing in the BD
 def getting_execl_data(file):
-    file_path = f"../moc/{file}"
+    file_path = f"/app/in/{file}"
     try:
         df = pd.read_excel(file_path)
     except Exception as e:

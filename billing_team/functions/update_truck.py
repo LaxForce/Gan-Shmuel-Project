@@ -2,7 +2,7 @@ from sql.billing_sql import session, Truck
 
 def update_truck(truck_id, data):
     # Get the new provider ID from the request
-    new_provider_id = data.get('provider')
+    new_provider_id = data.get('provider_id')
 
     # Validate that the new provider ID is provided
     if not new_provider_id:
