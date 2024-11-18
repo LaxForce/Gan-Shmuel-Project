@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from functions.create_provider import create_provider
 from functions.get_rates import get_rates_db
 from functions.health_check import check_health
+from functions.update_provider_name import update_provider_name  # Import your logic function
 from functions.post_rates import getting_execl_data
 from functions.add_truck import add_truck
 from functions.get_truck import fetch_truck_details
@@ -31,6 +32,14 @@ def health():
 
 post_rates_bp = Blueprint('post_rates', __name__)
 
+@provider_bp.route('/provider/<int:id>', methods=['PUT'])
+def update_provider(id):
+    provider_data = request.get_json()
+    if not provider_data or "name" not in provider_data:
+        return jsonify({"error": "Provider name is required"}), 400
+
+    # Call the update_provider_name function
+    return update_provider_name(id, provider_data["name"])
 @post_rates_bp.route('/rates', methods=['POST'])
 def post_rates():
     return getting_execl_data(request.args.get('filename'))
