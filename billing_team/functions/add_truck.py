@@ -12,7 +12,7 @@ def add_truck(data):
     provider_id = data.get('provider_id')
     id = data.get('id')
     
-    if not id or not provider_id:  # Fixed logic to ensure both are required
+    if not id or not provider_id:  
         return {"error": "id and provider_id are required"}, 400
 
     try:
