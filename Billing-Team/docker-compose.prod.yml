@@ -2,14 +2,12 @@ version: '3'
 services:
   billing:
     build:
-      context: ../Billing-Team
-    container_name: prod_billing
+      context: .    # Changed from ../Billing-Team
+    container_name: ci_prod_billing  # Changed to be consistent with naming
     ports:
       - "8082:8082"
     networks:
       - prod_network
-    
-
 networks:
   prod_network:
     name: ci_prod_network
