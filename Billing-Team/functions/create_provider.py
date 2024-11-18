@@ -6,6 +6,9 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 def create_provider(data):
+    if data is None or not isinstance(data, dict):
+        return {"error": "Invalid JSON or empty request body"}, 400
+
     name = data.get('name')
     if not name:
         return {"error": "Name is required"}, 400
@@ -26,6 +29,3 @@ def create_provider(data):
         # Rollback in case of an error
         session.rollback()
         return {"error": f"Failed to create provider: {str(e)}"}, 500
-
-
-        
