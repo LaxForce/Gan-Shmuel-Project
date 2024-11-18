@@ -6,6 +6,9 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 def create_provider(data):
+    if data is None or not isinstance(data, dict):
+        return {"error": "Invalid JSON or empty request body"}, 400
+
     name = data.get('name')
     if not name:
         return {"error": "Name is required"}, 400
