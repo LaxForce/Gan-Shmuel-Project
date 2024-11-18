@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 import os
 
 db_config = {
-    'host': os.environ.get("DB_HOST", "localhost"),
+    'host': os.environ.get("DB_HOST", "host.docker.internal"),
     'port': int(os.environ.get("DB_PORT", 3306)),
     'user': os.environ.get("DB_USER", "root"),
-    'password': os.environ.get("MYSQL_ROOT_PASSWORD", "123456"),
+    'password': os.environ.get("MYSQL_ROOT_PASSWORD", ""),
     'database': os.environ.get("MYSQL_DATABASE", "billdb"),
 }
 

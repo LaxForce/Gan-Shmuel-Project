@@ -4,11 +4,11 @@ from functions.get_rates import get_rates_db
 from functions.health_check import check_health
 from functions.update_provider_name import update_provider_name
 from functions.post_rates import getting_execl_data
+from functions.update_truck import update_truck
 from functions.add_truck import add_truck
 from functions.get_truck import fetch_truck_details
 from functions.get_bill import get_bill  
 
-# Provider blueprint
 provider_bp = Blueprint('provider', __name__)
 
 @provider_bp.route('/provider', methods=['POST'])
@@ -35,7 +35,7 @@ def post_truck():
 def get_truck(id):
     return fetch_truck_details(id, request.args)
 
-# Health blueprint
+
 health_bp = Blueprint('health', __name__)
 
 @health_bp.route('/health', methods=['GET'])
@@ -45,6 +45,15 @@ def health():
 
 # Post rates blueprint
 post_rates_bp = Blueprint('post_rates', __name__)
+
+@provider_bp.route('/provider/<int:id>', methods=['PUT'])
+def update_provider(id):
+    provider_data = request.get_json()
+    if not provider_data or "name" not in provider_data:
+        return jsonify({"error": "Provider name is required"}), 400
+
+    # Call the update_provider_name function
+    return update_provider_name(id, provider_data["name"])
 
 @post_rates_bp.route('/rates', methods=['POST'])
 def post_rates():
@@ -64,7 +73,7 @@ get_bill_bp = Blueprint('get_bill', __name__)
 def get_bill_route(id):
     return get_bill(id, request.args)
 
-# Setup routes by registering the blueprints
+# Setup routes by registering the blueprint
 def setup_routes(app):
     app.register_blueprint(provider_bp)
     app.register_blueprint(truck_bp)
@@ -72,3 +81,5 @@ def setup_routes(app):
     app.register_blueprint(post_rates_bp)
     app.register_blueprint(get_rates_bp)
     app.register_blueprint(get_bill_bp) 
+
+
