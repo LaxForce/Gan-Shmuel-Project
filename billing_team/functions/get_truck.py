@@ -1,8 +1,7 @@
 import os
 from sqlalchemy.orm import sessionmaker
 from sql.billing_sql import Truck, engine
-import requests
-from flask import jsonify
+from flask import jsonify, requests
 from datetime import datetime
 
 # Create a session bound to the engine
