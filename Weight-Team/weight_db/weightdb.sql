@@ -87,7 +87,7 @@ INSERT INTO `containers_registered` (`container_id`, `weight`, `unit`) VALUES
 --
 
 CREATE TABLE IF NOT EXISTS `transactions` (
-  `sessionId` int(12) NOT NULL,
+  `sessionId` varchar(20) NOT NULL,
   `id` int(12) NOT NULL AUTO_INCREMENT,
   `datetime` datetime DEFAULT NULL,
   `direction` varchar(10) DEFAULT NULL,

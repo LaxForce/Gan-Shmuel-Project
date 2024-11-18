@@ -374,7 +374,7 @@ def get_session(id):
         query = """
         SELECT t.id, t.direction, t.truck, t.bruto, t.truckTara, t.neto, t.containers
         FROM transactions t
-        WHERE t.SessionId = %s
+        WHERE t.sessionId = %s
         LIMIT 2
         """
         cursor.execute(query, (id,))
@@ -414,6 +414,270 @@ def get_session(id):
         if conn.is_connected():
             cursor.close()
             conn.close()
+@app.route('/weight', methods=['POST'])
+def record_weight():
+    data = request.json
+
+    direction = data.get('direction')
+    truck = data.get('truck', "na")
+    containers = data.get('containers', "").split(",")
+    weight = data.get('weight')  # This is the bruto
+    unit = data.get('unit', "kg")
+    force = data.get('force', "false").lower() == "true"
+    produce = data.get('produce', "na")
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        # Check if id is in the trucks table and if we get weight - if not return error, else insert
+        query = "SELECT id FROM trucks WHERE id = %s"
+        cursor.execute(query, (truck,))
+        if cursor.fetchone() is None:
+            if weight is not None:
+                query = "INSERT INTO trucks (id, weight, unit) VALUES (%s, %s, 'kg')"
+                cursor.execute(query, (truck, weight))
+            else:
+                return jsonify({"error": "Truck not found and weight is required."}), 400
+        
+        # If weight is not provided, search for it in the trucks table
+        elif weight is None:
+            query = "SELECT weight FROM trucks WHERE id = %s"
+            cursor.execute(query, (truck,))
+            truck_weight = cursor.fetchone()
+            if truck_weight and truck_weight['weight'] is not None:
+                weight = truck_weight['weight']
+            else:
+                return jsonify({"error": "Weight is required and could not be determined from the DB."}), 400
+
+        # Convert weight to KG if it's in lbs
+        if unit == "lbs":
+            weight = round(weight * 0.453592, 2)
+
+        if direction == "in":
+
+            # Generate session_id based on datetime (max 12 digits)
+            session_id = datetime.now().strftime('%Y%m%d%H%M')[:20]
+
+            # Check if there's already an 'in' record for the truck
+            query = """
+                SELECT id, bruto, direction
+                FROM transactions
+                WHERE truck = %s
+                ORDER BY datetime DESC LIMIT 1
+            """
+            cursor.execute(query, (truck,))
+            existing_in = cursor.fetchone()
+
+            if existing_in and not force:
+                if existing_in['direction'] == 'in':
+                    return jsonify({"error": "Truck already weighed in. Use force=true to overwrite."}), 400
+            elif existing_in and force and existing_in['direction'] == 'in':
+                query = """
+                    UPDATE transactions
+                    SET bruto = %s
+                    WHERE id = %s
+                """
+                cursor.execute(query, (weight, existing_in['id']))
+                conn.commit()
+                return jsonify({"id": existing_in['id'], "truck": truck, "bruto": weight}), 201
+
+            else:
+                # Insert the 'in' transaction (bruto is the weight)
+                query = """
+                    INSERT INTO transactions (sessionId, truck, containers, datetime, direction, bruto, produce)
+                    VALUES (%s, %s, %s, NOW(), 'in', %s, %s)
+                """
+                cursor.execute(query, (session_id, truck, ",".join(containers), weight, produce))
+                
+                # Fetch the last inserted ID
+                transaction_id = cursor.lastrowid
+                conn.commit()
+
+                return jsonify({"id": transaction_id, "truck": truck, "bruto": weight}), 201
+
+        elif direction == "out":
+            # Check for the latest 'in' transaction for the truck
+            query = """
+                SELECT id, bruto, sessionId, direction, truckTara, neto
+                FROM transactions
+                WHERE truck = %s
+                ORDER BY datetime DESC LIMIT 1
+            """
+            cursor.execute(query, (truck,))
+            previous = cursor.fetchone()
+
+            if not previous:
+                return jsonify({"error": "No previous 'in' record found for this truck."}), 400
+            elif not force and previous['direction'] == "out" or previous['direction'] == "none":
+                return jsonify({"error": "Truck already weighed out. Use force=true to overwrite."}), 400
+            elif force and previous['direction'] == "out":
+                 # Get the sum of container tara from the containers table
+                neto_up = previous['neto'] + previous['truckTara'] - weight
+                
+                # Update the 'in' transaction with the new weight
+                query = """
+                    UPDATE transactions
+                    SET truckTara = %s, neto = %s
+                    WHERE id = %s
+                """
+                cursor.execute(query, (weight, neto_up, previous['id']))
+                conn.commit()
+
+                query = """
+                    SELECT bruto
+                    FROM transactions
+                    WHERE truck = %s AND direction = 'in'
+                    ORDER BY datetime DESC LIMIT 1
+                """
+                cursor.execute(query, (truck,))
+                previous_in = cursor.fetchone()
+                
+                return jsonify({
+                    "id": previous['id'],
+                    "truck": truck,
+                    "bruto": previous_in['bruto'],
+                    "truckTara": weight,
+                    "neto": neto_up
+                }), 201
+
+            # Get the sum of container tara from the containers table
+            container_tara_sum = 0
+            if containers:
+                query = "SELECT SUM(weight) as tara FROM containers_registered WHERE container_id IN (%s)"
+                cursor.execute(query, containers)
+                container_tara = cursor.fetchone()
+                container_tara_sum = container_tara['tara'] if container_tara and container_tara['tara'] else 0
+            
+             # Check for the latest 'in' transaction for the truck
+            query = """
+                SELECT id, bruto, sessionId, direction, truckTara, neto
+                FROM transactions
+                WHERE truck = %s AND direction = 'in'
+                ORDER BY datetime DESC LIMIT 1
+            """
+            cursor.execute(query, (truck,))
+            previous_in = cursor.fetchone()
+            
+            # the same session id as in transaction
+            session_id = previous_in['sessionId']
+
+            # Calculate truck tara and neto
+            bruto = previous_in['bruto']
+            truck_tara = weight
+            neto = bruto - truck_tara - container_tara_sum
+
+            # If any container has unknown tara, return "na" for neto
+            if neto < 0:
+                neto = "na"
+
+            query = """
+                INSERT INTO transactions (sessionId, truck, containers, datetime, direction, bruto, truckTara, neto, produce)
+                VALUES (%s, %s, %s, NOW(), 'out', %s, %s, %s, %s)
+            """
+            cursor.execute(query, (session_id, truck, ",".join(containers), previous_in['bruto'], truck_tara, neto, produce))
+            
+            # Fetch the last inserted ID
+            transaction_id = cursor.lastrowid
+            conn.commit()
+            
+
+            return jsonify({
+                "id": transaction_id,
+                "truck": truck,
+                "bruto": bruto,
+                "truckTara": truck_tara,
+                "neto": neto
+            }), 201
+
+        elif direction == "none":
+
+            # Check for the latest 'in' transaction for the truck
+            query = """
+                SELECT direction, id 
+                FROM transactions
+                WHERE truck = %s
+                ORDER BY datetime DESC LIMIT 1
+            """
+            cursor.execute(query, (truck,))
+            last_transaction = cursor.fetchone()
+
+            # If the last transaction was 'in', prevent 'none' direction
+            if last_transaction and last_transaction['direction'] == 'in':
+                return jsonify({"error": "'none' direction is not supported after 'in'."}), 400
+            elif last_transaction and last_transaction['direction'] == 'none' and force:
+                query = """
+                    UPDATE transactions
+                    SET bruto = %s
+                    WHERE truck = %s
+                    """
+                cursor.execute(query, (weight, truck))
+                conn.commit()
+
+                return jsonify({"id": last_transaction['id'], "truck": truck, "bruto": weight}), 201
+
+            # Generate session_id based on datetime (max 12 digits)
+            session_id = datetime.now().strftime('%Y%m%d%H%M')[:20]
+                
+            # Insert the 'none' transaction (bruto is the weight)
+            query = """
+                INSERT INTO transactions (sessionId, truck, containers, datetime, direction, bruto, produce)
+                VALUES (%s, %s, %s, NOW(), 'none', %s, %s)
+            """
+            cursor.execute(query, (session_id, truck, ",".join(containers), weight, produce))
+                
+            # Fetch the last inserted ID
+            transaction_id = cursor.lastrowid
+            conn.commit()
+
+            return jsonify({"id": transaction_id, "truck": truck, "bruto": weight}), 201
+
+        # New checks for "in" followed by "in" or "out" followed by "out"
+        if direction in ["in", "out"]:
+            # Check if there's an existing transaction of the same direction
+            query = """
+                SELECT direction 
+                FROM transactions
+                WHERE truck = %s
+                ORDER BY datetime DESC LIMIT 1
+            """
+            cursor.execute(query, (truck,))
+            last_transaction = cursor.fetchone()
+
+            if last_transaction and last_transaction['direction'] == direction:
+                if not force:
+                    return jsonify({"error": f"Truck already weighed {direction}. Use force=true to overwrite."}), 400
+
+            # Handle overwriting if force is true (if needed, update the previous record)
+            if force:
+                # Delete previous transaction of the same direction (optional)
+                query = """
+                    DELETE FROM transactions
+                    WHERE truck = %s AND direction = %s
+                """
+                cursor.execute(query, (truck, direction))
+                conn.commit()
+
+                # Re-insert the transaction
+                session_id = datetime.now().strftime('%Y%m%d%H%M')[:20]
+                query = """
+                    INSERT INTO transactions (sessionId, truck, containers, datetime, direction, bruto, produce)
+                    VALUES (%s, %s, %s, NOW(), %s, %s, %s)
+                """
+                cursor.execute(query, (session_id, truck, ",".join(containers), direction, weight, produce))
+                transaction_id = cursor.lastrowid
+                conn.commit()
+
+                return jsonify({"id": transaction_id, "truck": truck, "bruto": weight}), 201
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
 
 
 if __name__ == "__main__":
