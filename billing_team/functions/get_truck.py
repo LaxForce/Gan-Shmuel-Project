@@ -1,8 +1,8 @@
 import os
 from sqlalchemy.orm import sessionmaker
 from sql.billing_sql import Truck, engine
-import requests
-from flask import jsonify
+# import requests
+from flask import jsonify, request
 from datetime import datetime
 
 # Create a session bound to the engine
@@ -24,18 +24,18 @@ def fetch_truck_details(truck_id, query_params):
 
     # Fetch tara from the Weight Microservice
     try:
-        tara_response = requests.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/item/{truck_id}")
+        tara_response = request.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/item/{truck_id}")
         tara_response.raise_for_status()
         tara = tara_response.json().get("tara", "na")
-    except requests.exceptions.RequestException as e:
+    except request.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch tara: {str(e)}"}), 500
 
     # Fetch sessions from the Weight Microservice
     try:
-        sessions_response = requests.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/weight?from={t1}&to={t2}&filter=in,out")
+        sessions_response = request.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/weight?from={t1}&to={t2}&filter=in,out")
         sessions_response.raise_for_status()
         session_ids = [session["id"] for session in sessions_response.json()]
-    except requests.exceptions.RequestException as e:
+    except request.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch sessions: {str(e)}"}), 500
 
     # Combine and return the data

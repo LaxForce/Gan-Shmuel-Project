@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from functions.create_provider import create_provider
 from functions.get_rates import get_rates_db
 from functions.health_check import check_health
@@ -40,6 +40,7 @@ def update_provider(id):
 
     # Call the update_provider_name function
     return update_provider_name(id, provider_data["name"])
+
 @post_rates_bp.route('/rates', methods=['POST'])
 def post_rates():
     return getting_execl_data(request.args.get('filename'))
