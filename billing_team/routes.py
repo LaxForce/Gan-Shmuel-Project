@@ -4,8 +4,10 @@ from functions.get_rates import get_rates_db
 from functions.health_check import check_health
 from functions.update_provider_name import update_provider_name  # Import your logic function
 from functions.post_rates import getting_execl_data
+from functions.update_truck import update_truck
 from functions.add_truck import add_truck
 from functions.get_truck import fetch_truck_details
+
 
 provider_bp = Blueprint('provider', __name__)
 
@@ -50,10 +52,28 @@ get_rates_bp = Blueprint('get_rates', __name__)
 def get_rates():
     return get_rates_db()
 
-# Setup routes by registering the blueprints
+
+truck_bp = Blueprint('truck', __name__)
+
+@truck_bp.route('/truck/<string:truck_id>', methods=['PUT'])
+def modify_truck(truck_id):
+    # Parse the request JSON
+    data = request.get_json()
+    if data is None or not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON or empty request body"}), 400
+
+    # Call the update_truck function
+    response, status_code = update_truck(truck_id, data)
+    return jsonify(response), status_code
+
+# Setup routes by registering the blueprint
+
 def setup_routes(app):
     app.register_blueprint(provider_bp)
     app.register_blueprint(truck_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(post_rates_bp)
     app.register_blueprint(get_rates_bp)
+    app.register_blueprint(truck_bp)
+    app.register_blueprint(get_rates_bp)
+
