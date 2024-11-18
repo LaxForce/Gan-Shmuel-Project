@@ -1,0 +1,50 @@
+services:
+  # Flask app service
+  app:
+    build: .
+    container_name: weights-trucks-app
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=weight_team
+      - DB_PASSWORD=12345
+      - DB_NAME=weight
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db
+    networks:
+      - my_net
+    volumes:
+      - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
+
+  # MySQL database service
+  db:
+    image: mysql:9.1.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: weight
+      MYSQL_USER: weight_team
+      MYSQL_PASSWORD: 12345
+    ports:
+      - "3308:3308"
+    networks:
+      - my_net
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weigtdb.sql
+      - ./weight_db/trucks.json:/app/weight_db
+    command: --skip-networking=false
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+networks:
+  my_net:
+    driver: bridge
+
+volumes:
+  mysql-data:

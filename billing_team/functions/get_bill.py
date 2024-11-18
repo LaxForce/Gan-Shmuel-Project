@@ -1,9 +1,9 @@
 from sqlalchemy.orm import sessionmaker
-from sql.billing_sql import Provider, Truck, Rates, engine
-import requests
-from flask import jsonify
+from sql.billing_sql import Providers, Truck, Rates, engine
+from flask import jsonify, request
 from datetime import datetime
 from functions.get_rates import get_rates_db  # Import get_rates_db function
+import os
 
 # Create a session bound to the engine
 Session = sessionmaker(bind=engine)
@@ -14,7 +14,7 @@ WEIGHT_TRUCK_PORT = os.getenv('WEIGHT_TRUCK_PORT', 5000)
 
 def get_bill(id, query_params):
     # Validate if the provider exists in the database
-    provider_exists = session.query(Provider).filter_by(id=id).first()
+    provider_exists = session.query(Providers).filter_by(id=id).first()
     if not provider_exists:
         return jsonify({"error": f"Provider ID {id} not found"}), 404
 
@@ -27,10 +27,10 @@ def get_bill(id, query_params):
 
     # Fetch sessions from the Weight Microservice
     try:
-        sessions_response = requests.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/weight?from={t1}&to={t2}&filter=in,out")
+        sessions_response = request.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/weight?from={t1}&to={t2}&filter=in,out")
         sessions_response.raise_for_status()
         sessions_data = sessions_response.json()
-    except requests.exceptions.RequestException as e:
+    except request.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch sessions: {str(e)}"}), 500
 
     # Get rates for products using the provided function
