@@ -1,10 +1,11 @@
 from flask import Flask, jsonify, request
-import mysql.connector
+import mysql.connector # type: ignore
 from dotenv import load_dotenv
 import os
 import time
 from datetime import datetime
 import json
+import io
 import pandas as pd
 from mysql.connector import Error
 
@@ -194,23 +195,30 @@ def insert_batch_weight(container_data):
         if conn.is_connected():
             cursor.close()
             conn.close()
-            
+
 @app.route('/batch-weight', methods=['POST'])
 # Function to parse CSV or JSON file and insert the data into the database
 def batch_weight():
     files = request.files.getlist('file')
     if not files:
-        return jsonify({"error": "No files provided"}), 400
+        return jsonify({"error": "No files provided"}), 400  # If no files were uploaded, return an error response
     
-    message = []
+    message = []  # Initialize the message list to store response messages
 
     for file in files:
+        # Check if the file is empty
+        file_content = file.read()
+        if len(file_content) == 0:
+            message.append(f"Empty file {file.filename}.")
+            return jsonify({"error": "Empty file uploaded"}), 400  # Return a 400 error for empty files
+
         file_extension = file.filename.split('.')[-1].lower()
-        
+
+        # Handle CSV files
         if file_extension == 'csv':
             try:
                 # Use pandas to read the CSV
-                df = pd.read_csv(file)
+                df = pd.read_csv(io.BytesIO(file_content))
                 
                 # Check if the necessary columns are present in the CSV
                 required_columns = ['id', 'weight', 'unit']
@@ -233,12 +241,16 @@ def batch_weight():
                 inserted_count = insert_batch_weight(container_data)
                 message.append(f"CSV data from {file.filename} processed successfully. {inserted_count} records inserted.")
             
+            except pd.errors.EmptyDataError:
+                message.append(f"CSV file {file.filename} is empty.")
             except Exception as e:
                 message.append(f"Error processing CSV {file.filename}: {str(e)}")
 
+        # Handle JSON files
         elif file_extension == 'json':
             try:
-                file_data = json.loads(file.read())
+                # Load the JSON data from the file content
+                file_data = json.loads(file_content)
                 container_data = []
                 
                 # Check if the necessary fields are present in each entry in the JSON
@@ -263,12 +275,17 @@ def batch_weight():
                 inserted_count = insert_batch_weight(container_data)
                 message.append(f"JSON data from {file.filename} processed successfully. {inserted_count} records inserted.")
             
+            except json.JSONDecodeError:
+                message.append(f"Invalid JSON format in {file.filename}.")
             except Exception as e:
                 message.append(f"Error processing JSON {file.filename}: {str(e)}")
 
+        # Handle unsupported file formats
         else:
             message.append(f"Unsupported file format in {file.filename}.")
-
+            return jsonify({"error": "Unsupported file format"}), 400  # Return 400 error for unsupported formats
+    
+    # Return the collected messages in the response
     return jsonify({"message": message}), 200
 
 # Define valid directions for filtering
@@ -362,6 +379,68 @@ def get_weights():
         if conn.is_connected():
             cursor.close()
             conn.close()
+
+@app.route('/item/<id>', methods=['GET'])
+def get_item(id):
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    
+    # Check the type of item (truck or container)
+    cursor.execute("SELECT tara FROM trucks WHERE id = %s", (id,))
+    truck = cursor.fetchone()
+    
+    if truck:
+        item_type = 'truck'
+        tara = truck['tara']
+    else:
+        # Query the containers_registered table for container data
+        cursor.execute("SELECT weight AS tara FROM containers_registered WHERE container_id = %s", (id,))
+        container = cursor.fetchone()
+        if container:
+            item_type = 'container'
+            tara = container['tara']  # Use the weight field from the containers_registered table
+        else:
+            # Item not found in either table
+            return jsonify({"error": "Item not found!"}), 404
+
+    # Parse `from` and `to` query parameters
+    now = datetime.now()
+    
+    # Get `from` and `to` query parameters, default to None if not provided
+    t1_str = request.args.get('from')
+    t2_str = request.args.get('to')
+    
+    # Default t1 is the first day of the current month at 00:00:00 if no `from` is provided
+    t1 = datetime.strptime(t1_str, '%Y%m%d%H%M%S') if t1_str else now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Default t2 is the current time if no `to` is provided
+    t2 = datetime.strptime(t2_str, '%Y%m%d%H%M%S') if t2_str else now
+    
+    # Print out the parsed dates to ensure they are correct
+    print(f"Date range for {id}: from {t1} to {t2}")
+
+    # Query sessions within the date range
+    cursor.execute("""
+        SELECT SessionId FROM transactions
+        WHERE (truck = %s OR containers LIKE %s) AND datetime BETWEEN %s AND %s
+    """, (id, f"%{id}%", t1, t2))
+    
+    sessions = cursor.fetchall()
+    session_ids = [session['SessionId'] for session in sessions]
+
+    # Close the connection
+    cursor.close()
+    conn.close()
+
+    # Return the JSON response
+    return jsonify({
+        "id": id,
+        "tara": tara,
+        "sessions": session_ids
+    })
+
+
+
 
 @app.route('/session/<id>', methods=['GET'])
 def get_session(id):

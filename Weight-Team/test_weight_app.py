@@ -1,3 +1,4 @@
+import io
 import pytest
 from unittest.mock import patch, MagicMock
 from weight_app import app
@@ -141,3 +142,56 @@ def test_get_unknown_weights(client):
         response = client.get('/unknown')
         assert response.status_code == 200
         assert response.json == ['container1', 'container2']
+
+# Test the /batch-weight endpoint
+def test_batch_weight(client):
+    with patch('mysql.connector.connect') as mock_connect:
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+
+        # Simulate successful insertion of records
+        mock_cursor.fetchone.return_value = [0]  # Simulate no existing container_id
+        mock_cursor.rowcount = 1  # Simulate successful insertion
+
+        # Prepare a mock CSV file
+        csv_data = "id,weight,unit\ncontainer1,500,kg\ncontainer2,0,kg\n"
+        csv_file = (io.BytesIO(csv_data.encode()), 'test.csv')
+
+        response = client.post('/batch-weight', content_type='multipart/form-data', data={'file': csv_file})
+        assert response.status_code == 200
+        assert "message" in response.json, "Missing 'message' key in response"
+        assert len(response.json["message"]) == 1, f"Expected 1 message for CSV, got: {response.json['message']}"
+        assert "CSV data from test.csv processed successfully." in response.json["message"][0]
+
+        # Prepare a mock JSON file
+        json_data = [
+            {"id": "container3", "weight": 1000, "unit": "lb"},
+            {"id": "container4", "weight": 0, "unit": "lb"}
+        ]
+        json_file = (io.BytesIO(json.dumps(json_data).encode()), 'test.json')
+
+        response = client.post('/batch-weight', content_type='multipart/form-data', data={'file': json_file})
+        assert response.status_code == 200
+        assert "message" in response.json, "Missing 'message' key in response"
+        assert len(response.json["message"]) == 1, f"Expected 1 message for JSON, got: {response.json['message']}"
+        assert "JSON data from test.json processed successfully." in response.json["message"][0]
+
+        # Unsupported file format check
+        txt_data = "id,weight,unit\ncontainer5,300,kg\n"
+        txt_file = (io.BytesIO(txt_data.encode()), 'test.txt')
+
+        response = client.post('/batch-weight', content_type='multipart/form-data', data={'file': txt_file})
+        assert response.status_code == 400  # Assuming a 400 error for unsupported file type
+        assert "error" in response.json, "Missing 'error' key in response"
+        assert "Unsupported file format" in response.json["error"], f"Expected error message about unsupported format, got: {response.json['error']}"
+
+        # Empty file check
+        empty_csv = io.BytesIO(b'')  # Simulating an empty file
+        empty_file = (empty_csv, 'empty.csv')
+
+        response = client.post('/batch-weight', content_type='multipart/form-data', data={'file': empty_file})
+        assert response.status_code == 400  # Assuming a 400 error for empty file
+        assert "error" in response.json, "Missing 'error' key in response"
+        assert "Empty file" in response.json["error"], f"Expected error message about empty file, got: {response.json['error']}"
