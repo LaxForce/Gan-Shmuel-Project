@@ -13,7 +13,6 @@ log() {
 
 # Helper function for sending notifications
 # Could be extended to send emails, Slack messages, etc.
-# Helper function for sending notifications using Python notifier
 notify() {
     local status=$1    # SUCCESS or FAILURE
     local message=$2   # Detailed message

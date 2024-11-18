@@ -9,8 +9,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # For managing external containers
       - ./logs:/app/logs  # For CI logs
       - ./data:/app/data  # For webhook data
-      - ./docker-compose.test.yml:/app/docker-compose.test.yml # For Tests Enviorment
-    environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock # ENC Variable to tell docker where to find the docker daemon's socket. To give CI container ability to control docker on host machine essentially.
-    restart: always
 
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock # ENC Variable to tell docker where to find the docker daemon's socket
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=${SMTP_USER}  # Will be taken from host environment
+      - SMTP_PASSWORD=${SMTP_PASSWORD}  # Will be taken from host environment
+      - SENDER_EMAIL=${SMTP_USER}
+      - RECIPIENT_EMAILS=${RECIPIENT_EMAILS}
+    restart: always

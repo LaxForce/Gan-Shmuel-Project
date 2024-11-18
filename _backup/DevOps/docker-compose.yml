@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  ci_system:
+    build: .
+    ports:
+      - "${WEBHOOK_PORT:-8080}:8080"  # For webhook
+      - "${HTOP_PORT:-8085}:8085"  # For htop monitoring
+      - "${LAZY_PORT:-8087}:8087"  # For lazydocker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # For managing external containers
+      - ./logs:/app/logs  # For CI logs
+      - ./data:/app/data  # For webhook data
+      - /proc:/host/proc:ro  # Added for host metrics
+      - /sys:/host/sys:ro   # Added for host metrics
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock # ENV Variable to tell docker where to find the docker daemon's socket. To give CI container ability to control docker on host machine essentially.
+      - HOST_PROC=/host/proc
+      - WEBHOOK_PORT=${WEBHOOK_PORT:-8080}
+      - HTOP_PORT=${HTOP_PORT:-8085}
+      - LAZY_PORT=${LAZY_PORT:-8087}      
+    pid: "host"
+    privileged: true
+    restart: always
+
