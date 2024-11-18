@@ -1,19 +1,13 @@
 #!/bin/bash
 
-echo "Running billing service tests..."
+# Hardcode environment variables
+export SERVICE_HOST="ci_test_billing"
+export WEIGHT_HOST="ci_test_weight"
+export SERVICE_PORT="8082"
+export WEIGHT_PORT="8081"
 
-# Detect environment and set SERVICE_HOST and WEIGHT_HOST
-if [ -z "$SERVICE_HOST" ]; then
-    if [ -n "$(grep docker /proc/1/cgroup)" ]; then
-        # Running inside Docker
-        SERVICE_HOST="ci_test_billing"
-        WEIGHT_HOST="ci_test_weight"
-    else
-        # Running locally
-        SERVICE_HOST="localhost"
-        WEIGHT_HOST="localhost"
-    fi
-fi
+
+echo "Running billing service tests..."
 
 # Default ports
 SERVICE_PORT="${SERVICE_PORT:-8082}"

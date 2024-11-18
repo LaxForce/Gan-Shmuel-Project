@@ -1,17 +1,10 @@
 #!/bin/bash
 
-echo "Running weight service tests..."
+# Hardcode environment variables
+export SERVICE_HOST="ci_test_weight"
+export SERVICE_PORT="8081"
 
-# Detect environment and set SERVICE_HOST
-if [ -z "$SERVICE_HOST" ]; then
-    if [ -n "$(grep docker /proc/1/cgroup)" ]; then
-        # Running inside Docker, use the default Docker service name
-        SERVICE_HOST="ci_test_weight"
-    else
-        # Running locally, default to localhost
-        SERVICE_HOST="localhost"
-    fi
-fi
+echo "Running weight service tests..."
 
 # Default port
 SERVICE_PORT="${SERVICE_PORT:-8081}"
