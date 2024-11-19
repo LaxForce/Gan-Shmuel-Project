@@ -96,11 +96,15 @@ graph TD
 - GitHub webhook configuration
 - Tests automation
 - Basic notification system (email)
+- Monitoring system development (Python/shell)
 ### Phase 2: CI Enhancements
 - Master branch tagging for deployed-to-production versions
 - Automated rollback procedure (to the last tagged version)
 - Manual rollback procedure (to a specific version)
-- Monitoring system development (Python/shell)
+- Full integration tests (Billing and Weight apps)
+- Configuration management (ports, app names, emails, etc.) using configuration json files
+- Logs cleanup 
+- Initial deployment automation (using GitHub manual workflow)
 ### Monitoring Integration
 The CI system includes a comprehensive monitoring solution for both host machine and containers. For detailed information, see [Monitoring System Design](Monitoring%20Design.md).
 
@@ -136,7 +140,7 @@ sudo rm -rf temp
 cd DevOps
 
 # Delete unnecessary files
-sudo rm -r devops_documentation/ readme.txt webhook/
+sudo rm -r devops_documentation/ readme.txt 
 ```
 
 #### Docker Configuration
