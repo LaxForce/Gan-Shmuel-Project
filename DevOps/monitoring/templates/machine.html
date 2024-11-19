@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Machine Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('monitoring.static', filename='styles.css') }}">
+    <script>
+        function refreshMetrics() {
+            fetch('/monitoring/machine/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu').innerHTML = `CPU Usage: ${data.cpu}%`;
+                    document.getElementById('memory').innerHTML = `Memory Usage: ${data.memory}%`;
+                    document.getElementById('disk').innerHTML = `Disk Usage: ${data.disk}%`;
+                });
+        }
+        setInterval(refreshMetrics, 2000);
+    </script>
+</head>
+<body>
+    <div class="monitor-container">
+        <h2>Machine Monitoring</h2>
+        <div class="metric-bar" id="cpu">CPU Usage: Loading...</div>
+        <div class="metric-bar" id="memory">Memory Usage: Loading...</div>
+        <div class="metric-bar" id="disk">Disk Usage: Loading...</div>
+        
+        <button onclick="window.open('/monitoring/machine/terminal', '_blank')">Launch htop</button>
+        <a href="{{ url_for('monitoring.menu') }}"><button>Back to Menu</button></a>
+        
+        <div class="refresh-rate">Refreshing every 2 seconds</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Container Monitoring</title>
+    <style>
+        .monitor-container {
+            width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .container-list {
+            margin: 20px 0;
+        }
+        .container-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .refresh-rate {
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+    <script>
+        function refreshContainers() {
+            fetch('/monitoring/containers/list')
+                .then(response => response.json())
+                .then(data => {
+                    const containerList = document.getElementById('containerList');
+                    containerList.innerHTML = '';
+                    data.containers.forEach(container => {
+                        containerList.innerHTML += `
+                            <div class="container-item">
+                                ${container.name} | ${container.status} | CPU: ${container.cpu}% | MEM: ${container.memory}MB | Created: ${container.created} | Size: ${container.size.toFixed(2)}MB
+                            </div>`;
+                    });
+                });
+        }
+        setInterval(refreshContainers, 2000);
+    </script>
+</head>
+<body>
+    <div class="monitor-container">
+        <h2>Container Monitoring</h2>
+        <div id="containerList" class="container-list">Loading containers...</div>
+        
+        <button onclick="window.open('/monitoring/containers/terminal', '_blank')">Launch LazyDocker</button>
+        <a href="{{ url_for('monitoring.menu') }}"><button>Back to Menu</button></a>
+        
+        <div class="refresh-rate">Refreshing every 5 seconds</div>
+    </div>
+</body>
+</html>
