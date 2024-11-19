@@ -71,10 +71,22 @@ def webhook():
                 'pusher': data['pusher']['name'],
                 'commit_email': data['pusher']['email']
             }
-            # Check if the push was to the new branch creation, skip if so
-            if event_info['commit'] == [] and data['before'] == '0' * 40:   # Check if the commit is an empty list
-                logger.info(f"Skipping empty push event, seems to be new branch: {event_info}")
+            # Check if this is a new branch creation
+            if data['before'] == '0' * 40 or data.get('created', False):
+                logger.info(f"Skipping new branch create push event: {event_info}")
                 return {'status': 'Skipping new branch create push event'}, 220
+
+            # Check if this is a deletion of a branch
+            if data['after'] == '0' * 40:
+                logger.info(f"Received branch deletion event: {event_info}")
+                return {'status': 'Branch deletion event'}, 220
+
+            # Check if this is a push to master that might have been covered by a PR merge
+            if event_info['branch'] == 'master' and event_info['source_branch'] == '':
+                logger.info(f"Received push event to master, following PR Merge: {event_info}")
+
+            # Otherwise, this is a normal push event    
+            logger.info(f"Received feature branch push event: {event_info}")
         else:
             logger.warning(f"Not a PR Merge or push event: event_type={event_type}, action={data['action']}")
             return {'status': f"Not a PR Merge or push event '{event_type}': action={data['action']}"}, 400
