@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e  # Exit on any error
 
+# Port Configuration
+WEIGHT_PROD_PORT=8081
+BILLING_PROD_PORT=8082
+WEIGHT_TEST_PORT=5000
+BILLING_TEST_PORT=5001
+WEIGHT_DB_PROD_PORT=3306
+WEIGHT_DB_TEST_PORT=3307
+BILLING_DB_PROD_PORT=3308
+BILLING_DB_TEST_PORT=3309
+
 # Setup logging
 LOG_FILE="/app/logs/ci_${TIMESTAMP}.log"
 exec 1> >(tee -a "$LOG_FILE") 2>&1
@@ -8,6 +18,29 @@ exec 1> >(tee -a "$LOG_FILE") 2>&1
 # Helper function for logging
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Function to get service port
+get_service_port() {
+    local service=$1
+    local environment=$2
+    
+    case "$service" in
+        "weight")
+            if [ "$environment" = "prod" ]; then
+                echo "$WEIGHT_PROD_PORT"
+            else
+                echo "$WEIGHT_TEST_PORT"
+            fi
+            ;;
+        "billing")
+            if [ "$environment" = "prod" ]; then
+                echo "$BILLING_PROD_PORT"
+            else
+                echo "$BILLING_TEST_PORT"
+            fi
+            ;;
+    esac
 }
 
 # Enhanced notification function
@@ -40,7 +73,7 @@ EOF
 # Function to check container health with retries
 check_health() {
     local service=$1      # Service name (e.g., 'weight', 'billing')
-    local port=$2        # Port to check health on
+    local port=$(get_service_port "$service" "$3")
     local environment=$3  # Added parameter for environment
     local retries=5
     local delay=10
@@ -68,33 +101,29 @@ check_health() {
     return 1
 }
 
-
 # Function to run service tests
 run_service_tests() {
     local service=$1
     local test_script="./tests/run_tests.sh"
     
-    # Set correct port based on service
-    local port
-    if [ "$service" = "weight" ]; then
-        port=8081  # TODO: move to config, read from file
-    elif [ "$service" = "billing" ]; then
-        port=8082  # TODO: move to config, read from file
-    else
-        log "Unknown service: ${service}"
-        return 1
-    fi
+    # Get port based on service
+    local port=$(get_service_port "$service" "test")
     
     if [ -f "$test_script" ]; then
         log "Running ${service} tests using provided test script..."
         chmod +x "$test_script"
+        
+        # Export port for test script to use
+        export SERVICE_PORT=$port
+        export WEIGHT_PORT=$WEIGHT_TEST_PORT  # For billing service to know where weight is
+        
         if ! timeout 300 "$test_script"; then
             log "${service} tests failed"
             return 1
         fi
     else
         log "No test script found for ${service}, using basic health check..."
-        if ! check_health "$service" "$port"; then
+        if ! check_health "$service" "$port" "test"; then
             log "${service} health check failed"
             return 1
         fi
@@ -118,18 +147,13 @@ cleanup() {
         docker-compose -f "Billing-Team/docker-compose.${environment}.yml" down --volumes --remove-orphans || true
     fi
     
-    # # Remove any leftover test containers with our project prefix
+    # Remove any leftover test containers with our project prefix
     docker ps -a | grep "ci_test_" | awk '{print $1}' | xargs -r docker rm -f || true
-    # # Remove any leftover test networks with our project prefix
-
-    # docker network ls | grep "ci_test_" | awk '{print $1}' | xargs -r docker network rm || true
     
     # Clean up repository if it exists
     if [ -d "repo" ]; then
         rm -rf repo
     fi
-
-    # TODO: Add any other cleanup steps as needed (e.g. logs, event jsons, etc.)
 }
 
 # Function to deploy a service
@@ -141,22 +165,12 @@ deploy_service() {
     # First go back to repo root
     cd /app/repo
     
-    # Debug info
-    #log "DEBUG: Deploying service ${service} in ${environment} environment"
-    #log "DEBUG: Current directory: $(pwd)"
-    
     if [ "$environment" = "test" ]; then
         log "Creating test network..."
         docker network create ci_test_network 2>/dev/null || true
-        # if ! docker network create --driver bridge --opt "com.docker.network.bridge.name"="ci_test_network" ci_test_network 2>/dev/null; then
-        #     log "Test network already exists or failed to create"
-        # fi
     else
         log "Creating production network..."
         docker network create ci_prod_network 2>/dev/null || true
-        # if ! docker network create --driver bridge --opt "com.docker.network.bridge.name"="ci_prod_network" ci_prod_network 2>/dev/null; then
-        #     log "Production network already exists or failed to create"
-        # fi    
     fi
     
     # Map service names to directory names
@@ -174,17 +188,12 @@ deploy_service() {
             ;;
     esac
     
-    #log "DEBUG: Trying to cd to ${service_dir}"
     cd "${service_dir}"
     
     log "Deploying ${service} in ${environment} environment..."
     
-    # Clean up ALL existing containers related to this service - DEBUG, can comment and uncomment as needed
-    #log "DEBUG: Cleaning up any existing containers"
+    # Clean up existing containers
     docker rm -f "ci_test_${service}" "ci_prod_${service}" 2>/dev/null || true
-    
-    # Clean up images - DEBUG, can comment and uncomment as needed
-    #log "DEBUG: Cleaning up any existing images" 
     docker rmi -f "${service_dir,,}_${service}" 2>/dev/null || true
     
     # Copy environment file (now using single .env)
@@ -194,13 +203,13 @@ deploy_service() {
         log "Warning: No .env file found"
     fi
     
-    # Debug compose file -- uncomment when needed
-    #log "DEBUG: Checking compose file content:"
-    #cat "$compose_file"
+    # Export port for docker-compose
+    export SERVICE_PORT=$(get_service_port "$service" "$environment")
+    if [ "$service" = "billing" ]; then
+        export WEIGHT_PORT=$(get_service_port "weight" "$environment")
+    fi
     
     # Build and start the service
-    #log "DEBUG: Running docker-compose with environment ${environment}"
-    #if ! docker-compose -f "$compose_file" up -d --build --no-recreate; then
     if ! timeout 300 docker-compose -f "$compose_file" up -d --build; then
         log "Failed to deploy ${service}"
         cd ..
@@ -223,7 +232,7 @@ run_tests() {
     fi
     
     # Wait for weight service to be healthy
-    if ! check_health "weight" 8081 "test"; then
+    if ! check_health "weight" "$WEIGHT_TEST_PORT" "test"; then
         notify "FAILURE" "Weight service failed health check"
         return 1
     fi
@@ -246,7 +255,7 @@ run_tests() {
     fi
     
     # Wait for billing service to be healthy
-    if ! check_health "billing" 8082 "test"; then
+    if ! check_health "billing" "$BILLING_TEST_PORT" "test"; then
         notify "FAILURE" "Billing service failed health check"
         return 1
     fi
@@ -262,20 +271,17 @@ run_tests() {
     cd ..
     
     notify "SUCCESS" "All tests passed"
-    cleanup
     return 0
 }
 
 # Function to handle production deployment
 deploy_production() {
-    #log "DEBUG: Starting production deployment function"
     log "Starting production deployment..."
 
     # Create production network if it doesn't exist
-    if ! docker network create ci_prod_network; then
-        notify "FAILURE" "Failed to create production network"
-        return 1
-    fi  
+    if ! docker network create ci_prod_network 2>/dev/null; then
+        log "Production network already exists or failed to create"
+    fi
     
     # Deploy weight service first
     if ! deploy_service "weight" "prod"; then
@@ -284,7 +290,7 @@ deploy_production() {
     fi
     
     # Check weight service health
-    if ! check_health "weight" 8081 "prod"; then
+    if ! check_health "weight" "$WEIGHT_PROD_PORT" "prod"; then
         notify "FAILURE" "Weight service unhealthy in production"
         return 1
     fi
@@ -296,7 +302,7 @@ deploy_production() {
     fi
     
     # Check billing service health
-    if ! check_health "billing" 8082 "prod"; then
+    if ! check_health "billing" "$BILLING_PROD_PORT" "prod"; then
         notify "FAILURE" "Billing service unhealthy in production"
         return 1
     fi
@@ -315,13 +321,6 @@ main() {
     cleanup "test"
     
     trap 'cleanup "test"' EXIT
-
-    # # Create network for testing
-    # log "Creating test network..."
-    # if ! docker network create ci_test_network 2>/dev/null; then
-    #     notify "FAILURE" "Failed to create test network"
-    #     exit 1
-    # fi
     
     # Clone repository
     log "Cloning repository..."
@@ -338,14 +337,8 @@ main() {
     
     # Run tests and handle the result
     if run_tests; then
-    
-        #log "DEBUG: Tests passed, checking branch condition"
-        #log "DEBUG: Current branch is '${BRANCH}'"
-    
         if [ "$BRANCH" = "master" ]; then
-            #log "DEBUG: Branch match found, should proceed to production"
             log "Tests passed on master branch, proceeding with production deployment..."
-            trap 'cleanup "test"' EXIT
             if deploy_production; then
                 notify "SUCCESS" "CI process completed successfully with production deployment"
             else
