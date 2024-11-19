@@ -47,6 +47,7 @@ INSERT INTO `Trucks` (`id`, `provider_id`) VALUES
 ("T-14405", 10002),
 ("T-16474", 10003),
 ("T-14964", 10004),
+("Truck-A", 10004),
 ("T-17194", 10005);
 --
 -- Dumping data
