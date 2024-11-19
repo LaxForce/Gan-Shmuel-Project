@@ -1,0 +1,34 @@
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/shelf/Uncommitted_changes_before_Update_at_14_11_2024,_17_14_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_17_11_2024,_22_34_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024,_11_11_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024,_13_55_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_17_11_2024__22_34__Changes_.xml
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024__11_11__Changes_.xml
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024__13_55__Changes_.xml
+/.idea/misc.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
+/.idea/shelf/Uncommitted_changes_before_Update_at_14_11_2024,_17_14_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_17_11_2024,_22_34_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024,_11_11_[Changes]/shelved.patch
+/.idea/shelf/Uncommitted_changes_before_Update_at_18_11_2024,_13_55_[Changes]/shelved.patch
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+.venv/
+env/
+../venv2
+volumes
+moc
+
+sql/test2.py
+
+# misc
+.idea
+.env
