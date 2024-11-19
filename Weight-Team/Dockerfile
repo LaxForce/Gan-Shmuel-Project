@@ -7,11 +7,15 @@ RUN apt-get update && apt-get install -y default-mysql-client && apt-get clean
 # Set app container working directory
 WORKDIR /app
 
+# Create and activate virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # Copy requirement dependencies txt to the /app container directory
 COPY requirements.txt /app/
 
 # Install the dependencies listed in requirements.txt using pip
-RUN pip install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy necessary files to the /app container directory
 COPY ./src /app/src
