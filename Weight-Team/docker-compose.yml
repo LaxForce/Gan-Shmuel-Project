@@ -45,6 +45,7 @@ services:
 networks:
   my_net:
     driver: bridge
+    external: true
 
 volumes:
   mysql-data:

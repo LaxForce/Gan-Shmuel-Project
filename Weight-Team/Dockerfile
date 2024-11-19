@@ -21,4 +21,4 @@ COPY weight_db/trucks.json /app/trucks.json
 ENV FLASK_APP=weight_app.py
 
 # Default command for the container
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5002"]

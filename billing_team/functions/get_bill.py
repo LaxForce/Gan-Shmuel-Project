@@ -10,7 +10,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 # Get Weight Microservice port dynamically
-WEIGHT_TRUCK_PORT = os.getenv('WEIGHT_TRUCK_PORT', 5000)
+WEIGHT_TRUCK_PORT = os.getenv('WEIGHT_TRUCK_PORT', 5002)
 
 def get_bill(id, query_params):
     # Validate if the provider exists in the database
@@ -21,13 +21,14 @@ def get_bill(id, query_params):
     # Extract query parameters or set defaults
     t1 = query_params.get('from') or datetime.now().replace(day=1, hour=0, minute=0, second=0).strftime("%Y%m%d%H%M%S")
     t2 = query_params.get('to') or datetime.now().strftime("%Y%m%d%H%M%S")
+    f = query_params.get('f') or 'in/out/none'
 
     # Calculate truck count for the provider within the time range
     truck_count = session.query(Truck).filter(Truck.provider_id == id).count()
 
     # Fetch sessions from the Weight Microservice
     try:
-        sessions_response = request.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/api/weight?from={t1}&to={t2}&filter=in,out")
+        sessions_response = request.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/weight?from={t1}&to={t2}&filter={f}")
         sessions_response.raise_for_status()
         sessions_data = sessions_response.json()
     except request.exceptions.RequestException as e:

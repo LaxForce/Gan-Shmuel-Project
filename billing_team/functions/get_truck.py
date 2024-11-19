@@ -26,23 +26,24 @@ def fetch_truck_details(truck_id, query_params):
 
     # Fetch tara from the Weight Microservice
     try:
-        tara_response = requests.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/item/{truck_id}")
+        tara_response = requests.get(f"http://weights-trucks-app:{WEIGHT_TRUCK_PORT}/item/{truck_id}")
         tara_response.raise_for_status()
         tara = tara_response.json().get("tara", "na")
+        session_id = tara_response.json().get("sessions", "na")
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch tara: {str(e)}"}), 500
 
-    # Fetch sessions from the Weight Microservice
-    try:
-        sessions_response = requests.get(f"http://127.0.0.1:{WEIGHT_TRUCK_PORT}/weight?from={t1}&to={t2}&filter={f}")
-        sessions_response.raise_for_status()
-        session_ids = [session["id"] for session in sessions_response.json()]
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Failed to fetch sessions: {str(e)}"}), 500
+    # # Fetch sessions from the Weight Microservice
+    # try:
+    #     sessions_response = requests.get(f"http://weights-trucks-app:{WEIGHT_TRUCK_PORT}/weight?from={t1}&to={t2}&filter={f}")
+    #     sessions_response.raise_for_status()
+    #     session_ids = [session["id"] for session in sessions_response.json()]
+    # except requests.exceptions.RequestException as e:
+    #     return jsonify({"error": f"Failed to fetch sessions: {str(e)}"}), 500
 
     # Combine and return the data
     return jsonify({
         "id": truck_id,
         "tara": tara,
-        "sessions": session_ids
+        "sessions": session_id
     })
