@@ -17,6 +17,13 @@ CREATE TABLE IF NOT EXISTS `Provider` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  AUTO_INCREMENT=10001 ;
 
+INSERT INTO `Provider` (`name`) VALUES
+('Idan'),
+('Rony'),
+('Itay'),
+('Erez'),
+('David');
+
 CREATE TABLE IF NOT EXISTS `Rates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `product_id` varchar(50) NOT NULL,
@@ -32,6 +39,16 @@ CREATE TABLE IF NOT EXISTS `Trucks` (
   PRIMARY KEY (`id`),
   FOREIGN KEY (`provider_id`) REFERENCES `Provider`(`id`)
 ) ENGINE=MyISAM ;
+
+INSERT INTO `Trucks` (`id`, `provider_id`) VALUES
+( "T-14409", 10001),
+("T-17250", 10001),
+("T-14045", 10001),
+("T-14405", 10002),
+("T-16474", 10003),
+("T-14964", 10004),
+("Truck-A", 10004),
+("T-17194", 10005);
 --
 -- Dumping data
 --
