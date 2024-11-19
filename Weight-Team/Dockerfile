@@ -14,10 +14,11 @@ COPY requirements.txt /app/
 RUN pip install -r requirements.txt
 
 # Copy necessary files to the /app container directory
-COPY ./src /app/src
-COPY .env /app/  
-COPY weight_db/weightdb.sql /docker-entrypoint-initdb.d/weightdb.sql
+COPY weight_app.py .env /app/
 COPY weight_db/trucks.json /app/trucks.json
 
+# Set environment variable to specify the Flask app file
+ENV FLASK_APP=weight_app.py
+
 # Default command for the container
-CMD ["python", "src/app.py"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
