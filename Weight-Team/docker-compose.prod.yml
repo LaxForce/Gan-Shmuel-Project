@@ -1,14 +1,56 @@
-version: '3'
 services:
-  weight:
-    build:
-      context: .    # Changed from ../Weight-Team since we're already in that directory
-    container_name: ci_prod_weight  # Changed to match the naming convention
+  # Flask app service
+  app:
+    build: .
+    container_name: ci_prod_weight
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=weight_team
+      - DB_PASSWORD=12345
+      - DB_NAME=weight
+      - SERVICE_HOST=ci_prod_weight
+      - SERVICE_PORT=8081
     ports:
-      - "8081:8081"
+      - "8081:5000"
+    depends_on:
+      - db
     networks:
+      - my_network
       - prod_network
+    volumes:
+      - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
+
+  # MySQL database service
+  db:
+    image: mysql:9.1.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: weight
+      MYSQL_USER: weight_team
+      MYSQL_PASSWORD: 12345
+    ports:
+      - "3306:3306"
+    networks:
+      - my_network
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
+      - ./weight_db/trucks.json:/app/weight_db
+    command: --skip-networking=false
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
 networks:
+  my_network:
+    driver: bridge
   prod_network:
     name: ci_prod_network
     external: true
+
+volumes:
+  mysql-data:

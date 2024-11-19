@@ -1,18 +1,56 @@
-version: '3'
 services:
-  weight:
-    build: 
-      context: ../Weight-Team    # Path to Weight-Team from project root
+  # Flask app service
+  app:
+    build: .
     container_name: ci_test_weight
-    ports:
-      - "8081:8081"
-    networks:
-      - test_network
     environment:
+      - DB_HOST=mysql-db
+      - DB_USER=weight_team
+      - DB_PASSWORD=12345
+      - DB_NAME=weight
       - SERVICE_HOST=ci_test_weight
       - SERVICE_PORT=8081
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - my_network
+      - test_network
+    volumes:
+      - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
+
+  # MySQL database service
+  db:
+    image: mysql:9.1.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: weight
+      MYSQL_USER: weight_team
+      MYSQL_PASSWORD: 12345
+    ports:
+      - "3306:3306"
+    networks:
+      - my_network
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
+      - ./weight_db/trucks.json:/app/weight_db
+    command: --skip-networking=false
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
 networks:
+  my_network:
+    driver: bridge
   test_network:
     name: ci_test_network
-    external: true    # Add this line - tells Docker the network already exists
+    external: true
+
+volumes:
+  mysql-data:
