@@ -386,7 +386,7 @@ def get_item(id):
     cursor = conn.cursor(dictionary=True)
     
     # Check the type of item (truck or container)
-    cursor.execute("SELECT tara FROM trucks WHERE id = %s", (id,))
+    cursor.execute("SELECT weight AS tara FROM trucks WHERE id = %s", (id,))
     truck = cursor.fetchone()
     
     if truck:
@@ -421,12 +421,12 @@ def get_item(id):
 
     # Query sessions within the date range
     cursor.execute("""
-        SELECT SessionId FROM transactions
+        SELECT sessionId FROM transactions
         WHERE (truck = %s OR containers LIKE %s) AND datetime BETWEEN %s AND %s
     """, (id, f"%{id}%", t1, t2))
     
     sessions = cursor.fetchall()
-    session_ids = [session['SessionId'] for session in sessions]
+    session_ids = [session['sessionId'] for session in sessions]
 
     # Close the connection
     cursor.close()
