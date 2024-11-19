@@ -144,7 +144,7 @@ def test_get_unknown_weights(client):
         assert response.json == ['container1', 'container2']
 
 # Test the /batch-weight endpoint
-def test_batch_weight(client):
+def test_post_batch_weight(client):
     with patch('mysql.connector.connect') as mock_connect:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
