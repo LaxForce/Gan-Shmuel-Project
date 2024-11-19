@@ -73,7 +73,7 @@ get_bill_bp = Blueprint('get_bill', __name__)
 
 @get_bill_bp.route('/bill/<id>', methods=['GET'])
 def get_bill_route(id):
-    return get_bill(id, request.args)
+    return get_bill(id, request)
 
 # Setup routes by registering the blueprint
 def setup_routes(app):

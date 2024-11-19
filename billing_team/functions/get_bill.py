@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from sql.billing_sql import Providers, Truck, engine
+from sql.billing_sql import Providers, Truck, engine, Rates, session
 from flask import jsonify, request
 from datetime import datetime
 import requests
@@ -12,7 +12,7 @@ session = Session()
 # Get environment settings
 WEIGHT_TRUCK_PORT = os.getenv('WEIGHT_TRUCK_PORT', 5002)
 
-def get_bill(provider_id):
+def get_bill(provider_id, request):
     # Validate if the provider exists
     provider = session.query(Providers).filter_by(id=provider_id).first()
     if not provider:
@@ -36,7 +36,10 @@ def get_bill(provider_id):
         return jsonify({"error": f"Failed to fetch weight data: {str(e)}"}), 500
 
     # Filter the weight data to only include entries related to the provider's trucks
-    relevant_data = [entry for entry in weight_data if entry['truck'] in truck_ids]
+    relevant_data = []
+    for entry in weight_data:
+        if entry['id'] == int(provider_id):
+            relevant_data.append(entry)
 
     # Aggregate weights by produce
     weights = {}
@@ -45,10 +48,11 @@ def get_bill(provider_id):
         neto = entry.get('neto', 0)
         if produce not in weights:
             weights[produce] = 0
-        weights[produce] += neto
+        if isinstance(neto, int):
+            weights[produce] += neto
 
     # Get rates and calculate payments
-    rates = get_rates_db()  # Assume this fetches rate information from the database
+    rates = get_rates()  # Assume this fetches rate information from the database
     payments, total_pay = calculate_payments(weights, rates, provider_id)
 
     # Construct response
@@ -87,3 +91,12 @@ def find_rate_for_product(product_id, provider_id, product_rates):
         if rate['Scope'] == "All":
             return rate['Rate']
     return 0
+
+def get_rates():
+    rate = []
+    rates_tables_data = session.query(Rates).all()
+    for rates in rates_tables_data:
+        data = {'Product': rates.product_id, 'Rate': rates.rate, 'Scope': rates.scope}
+        rate.append(data)
+    return rate
+

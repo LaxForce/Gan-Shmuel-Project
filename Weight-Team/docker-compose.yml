@@ -31,8 +31,7 @@ services:
     networks:
       - my_net
     volumes:
-      - mysql-data:/var/lib/mysql
-      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weigtdb.sql
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
       - ./weight_db/trucks.json:/app/weight_db
     command: --skip-networking=false
     healthcheck:
@@ -46,6 +45,3 @@ networks:
   my_net:
     driver: bridge
     external: true
-
-volumes:
-  mysql-data:
