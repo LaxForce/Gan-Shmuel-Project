@@ -143,8 +143,8 @@ cleanup() {
     fi
     
     # Clean up billing service
-    if [ -f "Billing-Team/docker-compose.${environment}.yml" ]; then
-        docker-compose -f "Billing-Team/docker-compose.${environment}.yml" down --volumes --remove-orphans || true
+    if [ -f "billing_team/docker-compose.${environment}.yml" ]; then
+        docker-compose -f "billing_team/docker-compose.${environment}.yml" down --volumes --remove-orphans || true
     fi
     
     # Remove any leftover test containers with our project prefix
@@ -180,7 +180,7 @@ deploy_service() {
             service_dir="Weight-Team"
             ;;
         "billing")
-            service_dir="Billing-Team"
+            service_dir="billing_team"
             ;;
         *)
             log "Unknown service: ${service}"
@@ -262,7 +262,7 @@ run_tests() {
     
     # Run billing service tests
     log "Running billing service tests..."
-    cd Billing-Team
+    cd billing_team
     if ! run_service_tests "billing"; then
         notify "FAILURE" "Billing service tests failed"
         cd ..
