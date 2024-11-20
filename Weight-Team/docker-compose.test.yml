@@ -2,7 +2,7 @@ services:
   # Flask app service
   app:
     build: .
-    container_name: ci_prod_weight
+    container_name: ci_test_weight
     environment:
       - DB_HOST=mysql-db
       - DB_USER=weight_team
