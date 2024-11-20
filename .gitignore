@@ -1,4 +1,21 @@
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+.venv/
+
+../venv2
+
+moc
+
+sql/test2.py
+
+# misc
+.idea
 **/logs*/*
 _backup/
 **/data/*
 *.json
+
