@@ -235,7 +235,7 @@ deploy_mockup() {
     if ! docker-compose -f docker-compose-test.yml up -d --build; then
         log "Failed to start mockup test environment"
         return 1
-    }
+    
     
     # Step 2: Run tests
     log "Running mockup tests..."
@@ -244,7 +244,7 @@ deploy_mockup() {
         log "Mockup tests failed"
         docker-compose -f docker-compose-test.yml down
         return 1
-    }
+    
     
     # Step 3: Log test results
     log "Test of mockup is ok"
@@ -258,7 +258,7 @@ deploy_mockup() {
     if ! docker-compose -f docker-compose-prod.yml up -d --build; then
         log "Failed to start mockup production environment"
         return 1
-    }
+    
     
     log "Mockup deployment completed successfully"
     cd ..
