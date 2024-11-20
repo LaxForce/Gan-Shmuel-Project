@@ -16,7 +16,6 @@ RUN pip install -r requirements.txt
 # Copy necessary files to the /app container directory
 COPY ./src /app/src
 COPY .env /app/
-COPY weight_db/weightdb.sql /docker-entrypoint-initdb.d/weightdb.sql
 COPY weight_db/trucks.json /app/trucks.json
 
 # Default command for the container

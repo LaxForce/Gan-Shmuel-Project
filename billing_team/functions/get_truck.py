@@ -28,8 +28,8 @@ def fetch_truck_details(truck_id, query_params):
     try:
         tara_response = requests.get(f"http://weights-trucks-app:{WEIGHT_TRUCK_PORT}/item/{truck_id}")
         tara_response.raise_for_status()
-        tara = tara_response.json().get("tara", "na")
-        session_id = tara_response.json().get("sessions", "na")
+        tara = tara_response.json().get("weight", "na")
+        session_id = tara_response.json().get("sessionsId", "na")
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to fetch tara: {str(e)}"}), 500
 

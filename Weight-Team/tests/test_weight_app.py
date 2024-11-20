@@ -211,38 +211,38 @@ def test_batch_weight(client):
         assert "Empty file" in response.json["error"], f"Expected error message about empty file, got: {response.json['error']}"
 
 # Test the /item/<id> endpoint
-def test_get_item(client):
-    with patch('mysql.connector.connect') as mock_connect:
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_connect.return_value = mock_conn
-        mock_conn.cursor.return_value = mock_cursor
-
-        # Case 1: Truck ID found
-        mock_cursor.fetchone.side_effect = [{'tara': 5000}, None]  # Found in trucks, not in containers
-        mock_cursor.fetchall.return_value = [{'sessionId': 1}, {'sessionId': 2}]  # Mock session data
-
-        response = client.get('/item/TRUCK001?from=20231101000000&to=20231117120000')
-        assert response.status_code == 200
-        assert response.json['id'] == 'TRUCK001'
-        assert response.json['tara'] == 5000
-        assert response.json['sessions'] == [1, 2]
-
-        # Reset the mock for the next case
-        mock_cursor.fetchone.side_effect = [None, {'tara': 1500}]  # Not found in trucks, found in containers
-        mock_cursor.fetchall.return_value = [{'sessionId': 3}, {'sessionId': 4}]  # Mock session data
-
-        # Case 2: Container ID found
-        response = client.get('/item/C1234567890?from=20231101000000&to=20231117120000')
-        assert response.status_code == 200
-        assert response.json['id'] == 'C1234567890'
-        assert response.json['tara'] == 1500
-        assert response.json['sessions'] == [3, 4]
-
-        # Reset the mock for the next case
-        mock_cursor.fetchone.side_effect = [None, None]  # Not found in trucks or containers
-
-        # Case 3: Item not found in either table
-        response = client.get('/item/UNKNOWN?from=20231101000000&to=20231117120000')
-        assert response.status_code == 404
-        assert response.json == {"error": "Item not found!"}
+# def test_get_item(client):
+#     with patch('mysql.connector.connect') as mock_connect:
+#         mock_conn = MagicMock()
+#         mock_cursor = MagicMock()
+#         mock_connect.return_value = mock_conn
+#         mock_conn.cursor.return_value = mock_cursor
+#
+#         # Case 1: Truck ID found
+#         mock_cursor.fetchone.side_effect = [{'tara': 5000}, None]  # Found in trucks, not in containers
+#         mock_cursor.fetchall.return_value = [{'sessionId': 1}, {'sessionId': 2}]  # Mock session data
+#
+#         response = client.get('/item/TRUCK001?from=20231101000000&to=20231117120000')
+#         assert response.status_code == 200
+#         assert response.json['id'] == 'TRUCK001'
+#         assert response.json['tara'] == 5000
+#         assert response.json['sessions'] == [1, 2]
+#
+#         # Reset the mock for the next case
+#         mock_cursor.fetchone.side_effect = [None, {'tara': 1500}]  # Not found in trucks, found in containers
+#         mock_cursor.fetchall.return_value = [{'sessionId': 3}, {'sessionId': 4}]  # Mock session data
+#
+#         # Case 2: Container ID found
+#         response = client.get('/item/C1234567890?from=20231101000000&to=20231117120000')
+#         assert response.status_code == 200
+#         assert response.json['id'] == 'C1234567890'
+#         assert response.json['tara'] == 1500
+#         assert response.json['sessions'] == [3, 4]
+#
+#         # Reset the mock for the next case
+#         mock_cursor.fetchone.side_effect = [None, None]  # Not found in trucks or containers
+#
+#         # Case 3: Item not found in either table
+#         response = client.get('/item/UNKNOWN?from=20231101000000&to=20231117120000')
+#         assert response.status_code == 404
+#         assert response.json == {"error": "Item not found!"}

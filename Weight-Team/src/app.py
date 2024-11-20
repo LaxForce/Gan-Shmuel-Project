@@ -1,3 +1,5 @@
+from doctest import debug
+
 from flask import Flask
 from blueprints import init_blueprints
 from dotenv import load_dotenv
@@ -20,4 +22,4 @@ init_blueprints(app)
 create_table()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002)
+    app.run(host="0.0.0.0", port=5002, debug=True)
