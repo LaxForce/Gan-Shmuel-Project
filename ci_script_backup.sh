@@ -220,51 +220,6 @@ deploy_service() {
     return 0
 }
 
-# Function to handle mockup deployment
-deploy_mockup() {
-    log "Starting mockup deployment process..."
-    
-    # Change to mockup directory
-    cd mockup || {
-        log "Failed to change to mockup directory"
-        return 1
-    }
-    
-    # Step 1: Create and run test environment
-    log "Starting mockup test environment..."
-    if ! docker-compose -f docker-compose-test.yml up -d --build; then
-        log "Failed to start mockup test environment"
-        return 1
-    }
-    
-    # Step 2: Run tests
-    log "Running mockup tests..."
-    chmod +x run-tests.sh
-    if ! ./run-tests.sh; then
-        log "Mockup tests failed"
-        docker-compose -f docker-compose-test.yml down
-        return 1
-    }
-    
-    # Step 3: Log test results
-    log "Test of mockup is ok"
-    
-    # Step 4: Bring test environment down
-    log "Cleaning up test environment..."
-    docker-compose -f docker-compose-test.yml down
-    
-    # Step 5: Create prod environment
-    log "Starting mockup production environment..."
-    if ! docker-compose -f docker-compose-prod.yml up -d --build; then
-        log "Failed to start mockup production environment"
-        return 1
-    }
-    
-    log "Mockup deployment completed successfully"
-    cd ..
-    return 0
-}
-
 # Function to run test environment
 run_tests() {
     log "Setting up test environment..."
@@ -381,19 +336,7 @@ main() {
     log "Checking out commit ${COMMIT_SHA}..."
     git checkout "${COMMIT_SHA}"
     
-    # Check if this is a mockup branch
-    if [[ "$BRANCH" == *"mockup"* ]]; then
-        log "Detected mockup branch, running mockup deployment..."
-        if deploy_mockup; then
-            notify "SUCCESS" "Mockup deployment completed successfully"
-        else
-            notify "FAILURE" "Mockup deployment failed"
-            exit 1
-        fi
-        return
-    fi
-
-    # Run tests and handle the result for non-mockup branches
+    # Run tests and handle the result
     if run_tests; then
         if [ "$BRANCH" = "master" ]; then
             log "Tests passed on master branch, proceeding with production deployment..."

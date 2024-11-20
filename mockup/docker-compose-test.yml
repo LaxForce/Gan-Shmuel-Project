@@ -1,0 +1,7 @@
+version: '3'
+services:
+  mockup_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: mockup_test

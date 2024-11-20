@@ -1,0 +1,7 @@
+version: '3'
+services:
+  mockup_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: mockup_prod
