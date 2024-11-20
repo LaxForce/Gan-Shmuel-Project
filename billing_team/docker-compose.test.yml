@@ -10,8 +10,10 @@ services:
       - my_net
     healthcheck:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "bill-sql", "-u", "root", "-p123456" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
       timeout: 10s
-      retries: 10
   app:
     build: .
     container_name: 'ci_test_billing'
