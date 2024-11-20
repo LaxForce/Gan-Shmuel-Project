@@ -32,7 +32,7 @@ services:
     networks:
       - my_net
     volumes:
-      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d
+      - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
       - ./weight_db/trucks.json:/app/weight_db
     command: --skip-networking=false
     healthcheck:
