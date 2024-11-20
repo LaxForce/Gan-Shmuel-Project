@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 import os
 
 db_config = {
-    'host': os.environ.get("DB_HOST", "host.docker.internal"),
+    'host': os.environ.get("DB_HOST", "bill-sql"),
     'port': int(os.environ.get("DB_PORT", 3306)),
     'user': os.environ.get("DB_USER", "root"),
     'password': os.environ.get("MYSQL_ROOT_PASSWORD", ""),

@@ -22,7 +22,7 @@ __pycache__/
 
 # Ignore virtual environments
 .venv/
-env/
+
 ../venv2
 volumes
 moc
@@ -31,4 +31,3 @@ sql/test2.py
 
 # misc
 .idea
-.env
