@@ -2,19 +2,19 @@ services:
   # Flask app service
   app:
     build: .
-    container_name: ci_test_weight
+    container_name: ci_prod_weight
     environment:
       - DB_HOST=mysql-db
       - DB_USER=weight_team
       - DB_PASSWORD=12345
       - DB_NAME=weight
     ports:
-      - "5002:5002"
+      - "8081:5002"
     depends_on:
       - db
     networks:
       - my_net
-      - test_network
+      - prod_network
     volumes:
       - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
 
@@ -28,7 +28,7 @@ services:
       MYSQL_USER: weight_team
       MYSQL_PASSWORD: 12345
     ports:
-      - "3309:3309"
+      - "3308:3308"
     networks:
       - my_net
     volumes:
@@ -46,6 +46,6 @@ networks:
   my_net:
     driver: bridge
     external: true
-  test_network:
-    name: ci_test_network
+  prod_network:
+    name: ci_prod_network
     external: true
