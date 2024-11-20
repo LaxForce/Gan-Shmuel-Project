@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url('/static/images/truck.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .center-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        height: 100%;
+        text-align: center;
+        padding-top: 100px;
+    }
+
+    .header-section {
+        margin-bottom: 50px;
+    }
+
+    .btn-custom {
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 2px solid #007bff;
+        color: #007bff;
+        padding: 15px 30px;
+        font-size: 18px;
+        margin: 10px 0;
+        width: 300px;
+        text-align: center;
+        border-radius: 10px;
+        transition: all 0.3s;
+        max-width: 90%;
+    }
+
+    .btn-custom:hover {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    /* Media Queries */
+    @media (max-width: 768px) {
+        .btn-custom {
+            width: 80%;
+        }
+
+        .header-section h2 {
+            font-size: 24px;
+        }
+
+        .header-section p {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .btn-custom {
+            width: 90%;
+        }
+
+        .header-section h2 {
+            font-size: 20px;
+        }
+
+        .header-section p {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<div class="center-container">
+    <button class="btn-custom" onclick="window.location.href='/health'">Start Health Check</button>
+    <button class="btn-custom" onclick="window.location.href='/unknown'">Unknown Weight Containers</button>
+    <button class="btn-custom">Post New Record weight</button>
+    <button class="btn-custom">Upload db File/s From /in Dir</button>
+    <button class="btn-custom">Deliveries By Date & Direction</button>
+</div>
+{% endblock %}

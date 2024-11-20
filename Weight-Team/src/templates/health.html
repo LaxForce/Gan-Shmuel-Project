@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url('/static/images/truck.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .center-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        text-align: center;
+    }
+
+    .message {
+        font-size: 24px;
+        top: 40px;
+        color: white;
+        background-color: rgba(0, 123, 255, 0.8);
+        padding: 20px 40px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .back-btn {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+    .back-btn:hover {
+        background-color: rgba(0, 123, 255, 1);
+    }
+
+    .back-btn::before {
+        content: '\2190'; 
+        font-size: 24px;
+    }
+</style>
+
+<a href="/" class="back-btn">Back to Home</a>
+
+<div class="center-container">
+    <div id="status" class="message" style="background-color: rgba(40, 167, 69, 0.8);">
+        Database Connection Status: {{ status }}
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/home/yosef/Develeap/gan-shmuel-project/project-gan-shmuel/Gan-Shmuel-Project/Weight-Team/venv"
+setenv VIRTUAL_ENV "/home/yosef/Desktop/NEW W DOCKER W UI/venv"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"

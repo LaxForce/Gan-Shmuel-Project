@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/home/yosef/Develeap/gan-shmuel-project/project-gan-shmuel/Gan-Shmuel-Project/Weight-Team/venv"
+set -gx VIRTUAL_ENV "/home/yosef/Desktop/NEW W DOCKER W UI/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

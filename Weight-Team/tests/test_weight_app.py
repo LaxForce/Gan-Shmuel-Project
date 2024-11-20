@@ -1,9 +1,19 @@
 import io
 import pytest
 from unittest.mock import patch, MagicMock
-from weight_app import app
 import json
-from datetime import datetime
+import sys
+import os
+import mysql.connector
+
+import unittest
+from unittest.mock import patch, MagicMock
+from unittest import TestCase
+
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+from app import app
 
 # Fixtures for the Flask test client
 @pytest.fixture
@@ -14,24 +24,29 @@ def client():
 
 # Test the /health endpoint
 def test_health_check(client):
-    with patch('weight_app.check_db_connection') as mock_check_db:
-        # Simulate a successful DB connection
-        mock_check_db.return_value = True
+    with patch('mysql.connector.connect') as mock_get_db, patch('time.sleep', return_value=None):  # Mock time.sleep
+        # Simulate a success in the database
+        mock_connection = MagicMock()
+        mock_connection.is_connected.return_value = True
+        mock_get_db.return_value = mock_connection
+    
         response = client.get('/health')
         assert response.status_code == 200
-        assert json.loads(response.data.decode()) == "OK"  # Expect the raw string "OK" as the JSON content
+        assert json.loads(response.data.decode()) == "OK"
 
-        # Simulate a failed DB connection
-        mock_check_db.return_value = False
+        # Simulate a failure in the database
+        mock_get_db.side_effect = mysql.connector.Error("Connection failed")
+
         response = client.get('/health')
         assert response.status_code == 500
-        assert json.loads(response.data.decode()) == "Failure"  # Expect the raw string "Failure" as the JSON content
+        assert json.loads(response.data.decode()) == "Failure"
+
 
 # Test the /session/<id> endpoint
 def test_get_session(client):
-    # Mock the database cursor and connection
+    # Mock the database connection and cursor
     with patch('mysql.connector.connect') as mock_connect:
-        mock_conn = MagicMock()
+        mock_conn = MagicMock()  # Correctly naming the mock connection
         mock_cursor = MagicMock()
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
@@ -57,11 +72,10 @@ def test_get_session(client):
         assert response.json[0]['truck'] == 'Truck 1'
 
         # Test session not found
-        mock_cursor.fetchall.return_value = []
+        mock_cursor.fetchall.return_value = []  # Simulate no session found
         response = client.get('/session/999')
         assert response.status_code == 404
         assert response.json == {"error": "Session not found"}
-
 
 # Test the /weight endpoint
 def test_get_weights(client):
@@ -144,7 +158,7 @@ def test_get_unknown_weights(client):
         assert response.json == ['container1', 'container2']
 
 # Test the /batch-weight endpoint
-def test_post_batch_weight(client):
+def test_batch_weight(client):
     with patch('mysql.connector.connect') as mock_connect:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -205,8 +219,8 @@ def test_get_item(client):
         mock_conn.cursor.return_value = mock_cursor
 
         # Case 1: Truck ID found
-        mock_cursor.fetchone.side_effect = [{'tara': 5000}, None]  # Found in trucks, not in containers
-        mock_cursor.fetchall.return_value = [{'SessionId': 1}, {'SessionId': 2}]  # Mock session data
+        mock_cursor.fetchone.side_effect = [{'weight': 5000}, None]  # Found in trucks, not in containers
+        mock_cursor.fetchall.return_value = [{'sessionId': 1}, {'sessionId': 2}]  # Mock session data
 
         response = client.get('/item/TRUCK001?from=20231101000000&to=20231117120000')
         assert response.status_code == 200
@@ -216,7 +230,7 @@ def test_get_item(client):
 
         # Reset the mock for the next case
         mock_cursor.fetchone.side_effect = [None, {'tara': 1500}]  # Not found in trucks, found in containers
-        mock_cursor.fetchall.return_value = [{'SessionId': 3}, {'SessionId': 4}]  # Mock session data
+        mock_cursor.fetchall.return_value = [{'sessionId': 3}, {'sessionId': 4}]  # Mock session data
 
         # Case 2: Container ID found
         response = client.get('/item/C1234567890?from=20231101000000&to=20231117120000')
