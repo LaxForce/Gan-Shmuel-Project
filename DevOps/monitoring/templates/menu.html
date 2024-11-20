@@ -1,0 +1,22 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitoring Menu</title>
+    <link rel="stylesheet" href="{{ url_for('monitoring.static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="menu-container">
+        <h2>Monitoring Menu</h2>
+        <a href="{{ url_for('monitoring.machine') }}">
+            <button class="menu-button">Machine Monitoring</button>
+        </a>
+        <a href="{{ url_for('monitoring.containers') }}">
+            <button class="menu-button">Containers Monitoring</button>
+        </a>
+        <a href="{{ url_for('monitoring.login') }}">
+            <button class="menu-button">Logout</button>
+        </a>
+    </div>
+</body>
+</html>

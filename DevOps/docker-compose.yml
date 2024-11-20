@@ -1,0 +1,37 @@
+# version: '3.8'
+
+services:
+  ci_system:
+    build: .
+    ports:
+      - "8080:8080"  # For github webhook and monitoring menu
+      - "8085:8085"  # For htop monitoring
+      - "8087:8087"  # For lazydocker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # For managing external containers
+      - ./logs:/app/logs  # For CI logs
+      - ./data:/app/data  # For webhook data
+      - /proc:/host/proc:ro  # Added for host metrics
+      - /sys:/host/sys:ro   # Added for host metrics
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock # ENC Variable to tell docker where to find the docker daemon's socket. To give CI container ability to control docker on host machine essentially.
+      - HOST_PROC=/host/proc
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=${SMTP_USER}  # Will be taken from host environment
+      - SMTP_PASSWORD=${SMTP_PASSWORD}  # Will be taken from host environment
+      - SENDER_EMAIL=${SMTP_USER}
+      - RECIPIENT_EMAILS=${RECIPIENT_EMAILS}
+    networks:
+      - ci_test_network
+      - ci_prod_network
+    pid: "host"
+    privileged: true
+    restart: always
+
+networks:
+  ci_test_network:
+    name: ci_test_network
+    external: true
+  ci_prod_network:    
+    external: true

@@ -1,0 +1,48 @@
+
+We need to build solution for CI imitation per following inputs:
+1) There is a project with three teams, Billing and Weight development teams and DevOps team
+2) The project is managed in one github repository (monorepo), while each team has its own folder there
+3) Each team creates one feature branch (billing-app, weight-app, devops) where the team works on their development
+4) Each application consists of two parts: set of REST APIs (get, post) called from python and bash modules and MySQL database
+5) Each application creates two docker files: one for application and one for database. 
+6) These docker images are managed by docker-compose.yml file, separated for each application
+7) Each application will be deployed in test environment and then to production.
+8) Additionally, each application creates a set of automated tests that are executed on the test environment
+9) Environments and CI Tool are located on AWS EC2 instance.
+10) Envionments are presented as docker containers, running on AWS EC2 instance.
+   So there are two docker-compose builds for each application: one for test environment and one for production.
+11) The testing environment is built from the feature branch (recognized by the branch name). It is brought down after the testing is finished.
+12) The production environment is built from the master branch. It should be up all the time, so it is brought down only when the application is updated.
+13) There is no integration between the apllications' databases. But there is integration between the apllications' APIs.
+
+From DevOps perspective the process looks as follow:
+1) There is CI Portal docker application on AWS EC2 instance. This application listens to GitHub Webhook events and starts the CI process
+2) When developer pushes the change to the feature branch, 
+    GitHub Webhook sends payload with the details of the push event (branch, developer name) to CI portal server
+    CI portal server recognizes the application based on the branch name and starts the CI process for that apllication:
+       - Clones the repository from GitHub using git clone command (or other shell way)
+       - Builds the docker images for the application from the docker compose.yml file of the branch
+       - Starts the test environment (docker-compose up)
+       - Runs the automated tests for the application from the tests file(s)/folder
+       - Bings down the test environment (docker-compose down)
+       - Sends the results of the tests (successful or failed, statistic) by emaill to the developer
+3) When developer team lead approves the pool request and merges are done to the master branch,
+    GitHub Webhook sends payload with the details of the push event (branch, developer name, PR information) to CI portal server
+    CI portal server recognizes the application based on the branch name and starts the CI process for that application:
+    - Clones the repository from GitHub using git clone command (or other shell way)
+    - Builds the docker images for the application from the docker compose.yml file of the branch, which changes were merged
+      to the master branch. What means that the process should recognize the "merged" branch and use the commit which was merged to the master branch
+    - Starts the test environment (docker-compose up) for the application
+    - Runs the automated tests for the application from the tests file(s)/folder
+    - Bings down the test environment (docker-compose down) 
+    - If the tests are successful, the application is deployed to the production environment - 
+        - CI Portal server cheks if the production environment is up and running, and gracefully shuts it down
+        - CI Portal server builds the production environment (docker-compose up)
+        - CI Portal starts the production environment (docker-compose up)
+    - If the tests are failed, the application is not deployed to the production environment
+    - CI Portal sends the results of the tests (successful or failed, statistic) and of deployment to production by email to the developer, his team lead and DevOps team lead
+    All the Portal activities are logged in the log file.
+    The composed mail should contain attached log file with the details of the process.
+    If the process fails technically (e.g. the docker compose build failed, the github clone failed), CI portal should send mail to DevOps team with the attached log.
+
+    As a wish, the CI portal should have a monitoring of the processes (e.g. docker is down etc.) and send an email to the DevOps team in case of any issue.

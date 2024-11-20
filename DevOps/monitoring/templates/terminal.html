@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Terminal View</title>
+    <style>
+        .close-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            padding: 8px 15px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .close-button:hover {
+            background: #cc0000;
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            const serverAddress = window.location.hostname;
+            const path = window.location.pathname;
+            const port = path.includes('machine') ? '8085' : '8087';
+            const ttydUrl = `http://${serverAddress}:${port}`;
+            // Create close button before redirect
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-button';
+            closeBtn.innerHTML = 'Close';
+            closeBtn.onclick = () => window.close();
+            document.body.appendChild(closeBtn);
+            // Load ttyd in an iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = ttydUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+        }
+    </script>
+</head>
+<body style="margin:0; padding:0;">
+</body>
+</html>
