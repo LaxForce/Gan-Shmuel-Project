@@ -14,7 +14,7 @@ services:
       - db
     networks:
       - my_net
-      - prod_network
+      - test_network
     volumes:
       - ./in:/in  # Mount the local 'in' directory to '/in' inside the container
 
@@ -46,6 +46,6 @@ networks:
   my_net:
     driver: bridge
     external: true
-  prod_network:
-    name: ci_prod_network
+  test_network:
+    name: ci_test_network
     external: true
