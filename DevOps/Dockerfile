@@ -50,6 +50,6 @@ RUN chmod +x ci_script.sh
 COPY monitoring/ /app/monitoring/
 
 # Add mockup folder
-COPY ../mockup/ /app/mockup/
+COPY mockup/ /app/mockup/
 
 CMD ["python3", "webhook_server.py"]
