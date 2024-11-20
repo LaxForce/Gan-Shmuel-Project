@@ -34,6 +34,7 @@ services:
     volumes:
       - ./weight_db/weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
       - ./weight_db/trucks.json:/app/weight_db
+    command: bash chmod +x /docker-entrypoint-initdb.d/weightdb.sql
     command: --skip-networking=false
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "mysql-db", "-u", "weight_team", "-p12345"]
