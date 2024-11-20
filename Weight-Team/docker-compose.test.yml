@@ -28,7 +28,7 @@ services:
       MYSQL_USER: weight_team
       MYSQL_PASSWORD: 12345
     ports:
-      - "3308:3308"
+      - "3309:3309"
     networks:
       - my_net
     volumes:

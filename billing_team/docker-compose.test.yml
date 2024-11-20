@@ -3,7 +3,7 @@ services:
     build: ./sql
     container_name: 'bill-sql'
     ports:
-      - 3306:3306
+      - 3307:3307
     environment:
       - MYSQL_ROOT_PASSWORD
     networks:
