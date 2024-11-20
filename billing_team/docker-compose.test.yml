@@ -9,7 +9,7 @@ services:
     networks:
       - my_net
     healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "bill-sql" ]
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "bill-sql", "-u", "root", "-p123456" ]
       timeout: 10s
       retries: 10
   app:
