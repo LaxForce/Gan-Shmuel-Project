@@ -11,8 +11,22 @@ def get_item(id):
     cursor = conn.cursor(dictionary=True)
     
     # Check the type of item (truck or container)
-    # cursor.execute("SELECT * FROM trucks WHERE id = %s", (id,))
-    # truck = cursor.fetchall()
+    cursor.execute("SELECT weight AS tara FROM trucks WHERE id = %s", (id,))
+    truck = cursor.fetchone()
+    
+    if truck:
+        item_type = 'truck'
+        tara = truck['tara']
+    else:
+        # Query the containers_registered table for container data
+        cursor.execute("SELECT weight AS tara FROM containers_registered WHERE container_id = %s", (id,))
+        container = cursor.fetchone()
+        if container:
+            item_type = 'container'
+            tara = container['tara']  # Use the weight field from the containers_registered table
+        else:
+            # Item not found in either table
+            return jsonify({"error": "Item not found!"}), 404
 
     # Parse `from` and `to` query parameters
     now = datetime.now()
@@ -32,43 +46,20 @@ def get_item(id):
 
     # Query sessions within the date range
     cursor.execute("""
-        SELECT * FROM transactions
+        SELECT sessionId FROM transactions
         WHERE (truck = %s OR containers LIKE %s) AND datetime BETWEEN %s AND %s
     """, (id, f"%{id}%", t1, t2))
     
     sessions = cursor.fetchall()
-    # session = [session['sessionId'] for session in sessions]
-
-    response = {
-        'id': id,
-        'weight' : 0,
-        'sessionsId': [],
-    }
-    print(sessions)
-    if sessions[0]['truck'] == id:
-        item_type = 'truck'
-    else:
-        # Query the containers_registered table for container data
-        cursor.execute("SELECT weight AS tara FROM containers_registered WHERE container_id = %s", (id,))
-        container = cursor.fetchone()
-        if container:
-            item_type = 'container'  # Use the weight field from the containers_registered table
-            return jsonify({
-                'container_id': id,
-                'weight': container['tara'],
-            })
-        else:
-            # Item not found in either table
-            return jsonify({"error": "Item not found!"}), 404
-
-    for se in sessions:
-        if se['direction'] == 'in':
-            response['weight'] += se['neto']
-            response['sessionsId'].append(se['sessionId'])
+    session_ids = [session['sessionId'] for session in sessions]
 
     # Close the connection
     cursor.close()
     conn.close()
 
     # Return the JSON response
-    return jsonify(response)
+    return jsonify({
+        "id": id,
+        "tara": tara,
+        "sessions": session_ids
+    })
